@@ -172,6 +172,22 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ---
 
+## 📚 Complete Documentation Library (`MD_Files/`)
+
+All technical specifications, verification reports, and presentation guides are indexed in the [`MD_Files/`](./MD_Files/INDEX.md) folder:
+
+| Document | Purpose |
+| :--- | :--- |
+| 🏗️ [**Architecture Blueprint**](./MD_Files/ARCHITECTURE.md) | Multi-tier architectural specifications, data flow, and mathematical debt models. |
+| ✨ [**Features Specification**](./MD_Files/FEATURES.md) | Full breakdown of Module 1 (Feasibility) and Module 2 (Financial Engine). |
+| 🎬 [**3-Minute Demo Script**](./MD_Files/DEMO_SCRIPT.md) | Rehearsed presenter script for the official video submission. |
+| 🧪 [**Manual Testing Report & Guide**](./MD_Files/MANUAL_TEST_REPORT.md) | Verified test logs, data persistence mechanics, and step-by-step testing instructions. |
+| ⚖️ [**Limitations & Scalability Roadmap**](./MD_Files/LIMITATIONS_AND_ROADMAP.md) | Statutory disclaimers, prototype boundaries, and future integration phases. |
+| 🛠️ [**Tech Stack Deep Dive**](./MD_Files/TECH_STACK.md) | Architectural trade-offs and rationale behind deterministic vs. LLM separation. |
+| 🏆 [**Hackathon Submission Guide**](./MD_Files/HACKATHON_SUBMISSION_GUIDE.md) | Form fields, slide-by-slide PPT guide, and pre-submission checklist. |
+
+---
+
 ## 👥 Hackathon Team & Project Info
 
 - **Hackathon:** MSU Hack-A-Throne 2026
