@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  phone         String?
+  state         String?
+  district      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  analyses      BusinessAnalysis[]
+  reports       Report[]
+  chatMessages  ChatMessage[]
+}
+
+model BusinessAnalysis {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Location
+  state           String
+  district        String
+  block           String?
+  village         String?
+  
+  // Business
+  category        String
+  description     String?
+  experience      String    @default("new") // new, some, experienced
+  
+  // Financial
+  marginCapital   Float
+  projectCost     Float
+  loanAmount      Float
+  scheme          String    // micro, term
+  interestRate    Float
+  tenureYears     Int
+  moratoriumMonths Int
+  emiMonthly      Float
+  
+  // AI Analysis
+  feasibilityScore    Int?
+  marketScore         Int?
+  financialScore      Int?
+  riskScore           Int?
+  executiveSummary    String?
+  marketReach         String?
+  opportunities       String?
+  swotStrengths       String?
+  swotWeaknesses      String?
+  swotOpportunities   String?
+  swotThreats         String?
+  localThreats        String?
+  competitorAnalysis  String?
+  pricingStrategy     String?
+  aiRecommendations   String?
+  
+  status          String    @default("draft") // draft, completed
+  isDemo          Boolean   @default(false)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  report          Report?
+  chatMessages    ChatMessage[]
+}
+
+model Report {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisId      String    @unique
+  analysis        BusinessAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  
+  title           String
+  status          String    @default("generated")
+  pdfUrl          String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model LoanScheme {
+  id              String    @id @default(cuid())
+  name            String    @unique
+  code            String    @unique // micro, term
+  maxProjectCost  Float
+  minProjectCost  Float
+  maxLoanAmount   Float
+  fundingPercent  Float
+  interestRate    Float
+  tenureYears     Int
+  moratoriumMonths Int
+  description     String
+  
+  createdAt       DateTime  @default(now())
+}
+
+model ChatMessage {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisId      String?
+  analysis        BusinessAnalysis? @relation(fields: [analysisId], references: [id], onDelete: SetNull)
+  
+  role            String    // user, assistant
+  content         String
+  language        String    @default("en") // en, hi, gu
+  
+  createdAt       DateTime  @default(now())
+}
