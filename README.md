@@ -1,43 +1,148 @@
-# 🌾 GramSaarthi AI
+<div align="center">
 
-> **AI-Powered Hyper-Local Business Advisory & Financial Structuring Assistant for Rural Micro-Entrepreneurs**  
-> Developed for **MSU Hack-A-Throne 2026 — Problem Statement P11 (Elimination Round)**
+# 🌾 GramSaarthi AI
+### AI-Powered Hyper-Local Business Advisory & Financial Structuring Assistant
+
+**Empowering India's Rural & Semi-Urban Micro-Entrepreneurs with Institutional-Grade Business Intelligence**
+
+[![MSU Hack-A-Throne 2026](https://img.shields.io/badge/MSU%20Hack--A--Throne-2026-059669?style=for-the-badge&logo=target)](https://github.com/ChiragVasava/gramsaarthi-ai)
+[![Problem Statement P11](https://img.shields.io/badge/Problem%20Statement-P11-2563EB?style=for-the-badge)](https://github.com/ChiragVasava/gramsaarthi-ai)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16.3-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+
+</div>
 
 ---
 
-## 📌 Problem Overview
-Rural micro-entrepreneurs frequently struggle to access formal business advisory services and concessional government debt. They often select enterprises based on hearsay rather than localized market data, leading to severe cashflow distress or rejection during institutional credit appraisals.
+## 📌 Problem Context (P11)
 
-**GramSaarthi AI** solves this by providing:
-1. **Module 1 — Hyper-Local Feasibility Report**: 5–10 km consumer base reach, SWOT analysis, local threat alerts, competitor density, and pricing guidance.
-2. **Module 2 — Smart Financial Calculator & Scheme Router**: Automatic statutory routing between **Micro Finance (6.5%)** and **Term Loan (8.0%)** schemes, with quarterly amortization and moratorium handling.
+In India, over **70 million rural micro-entrepreneurs** aspire to build sustainable village-level businesses. While state and central concessional credit schemes (such as State Channelizing Agencies and National Corporations) offer up to **90% low-interest debt funding**, first-time rural founders face severe barriers:
+
+- ❌ **Guesswork-based Venture Selection:** Picking trades based on anecdotal hearsay rather than empirical local demand.
+- ❌ **Financial Structuring Gap:** Inability to calculate feasible project costs, determine debt eligibility, or understand statutory interest rates, tenure, and moratorium grace periods.
+- ❌ **Absence of Local Market Intelligence:** Lack of hyper-local competitor mapping, 5–10 km consumer catchment analysis, and seasonal risk warnings.
+
+**GramSaarthi AI** solves this by acting as a digital business advisor—guiding entrepreneurs through a structured feasibility workflow before they commit their hard-earned savings.
+
+---
+
+## 🌟 Core System Modules
+
+### 🔍 Module 1: Hyper-Local Business Feasibility Report
+- **Spatial Consumer Catchment:** Quantitative demand sizing within a **5 km primary core** and **10 km secondary institutional** radius.
+- **Empirical SWOT Matrix:** Tailored Strengths, Internal Weaknesses, Market Opportunities, and Environmental Threats.
+- **Local Threat Identification:** Alerts for summer fodder inflation, seasonal crop demand drops, and supply chain dependencies.
+- **Competitor Mapping:** Density profiling of neighboring micro-enterprises and cooperatives.
+- **Dynamic Pricing Guidance:** Recommended farm-gate, wholesale, and value-added retail price benchmarks (e.g., raw milk vs. ghee/paneer).
+
+### 💰 Module 2: Deterministic Financial Engine & Scheme Router
+*Crucial Design Principle: Financial calculations are 100% deterministic (TypeScript algorithms) rather than delegated to an LLM.*
+
+- **Feasible Project Sizing:**
+  $$\text{Project Cost} = \frac{\text{Available Margin Capital}}{10\%}$$
+- **Concessional Debt Eligibility:**
+  $$\text{Maximum Loan Amount} = \text{Project Cost} \times 90\%$$
+- **Statutory Scheme Selection Engine:**
+  - **Micro Finance Scheme** (Project Cost $\le \text{₹1,40,000}$): Funding up to 90% (max loan ₹1.25L), **6.5% interest p.a.**, **3-year tenure**, **3-month moratorium grace**.
+  - **Term Loan Scheme** ($\text{₹1,40,000} < \text{Project Cost} \le \text{₹50,00,000}$): Funding up to 90% (max loan ₹45L), **8.0% interest p.a.**, **7-year tenure**, **6-month moratorium grace**.
+- **Quarterly Amortization Schedule:** Modeling principal and interest outflows with moratorium grace period handling.
+- **Working Capital Buffer Guidance:** Recommending a 3-month operational liquidity reserve to prevent startup cashflow strangulation.
+
+---
+
+## 🚀 Key Features
+
+| Feature | Description |
+| :--- | :--- |
+| 📋 **Guided 4-Step Intake Wizard** | Streamlined intake for Village/Block coordinates, business trade, own equity, and experience. |
+| 📊 **Executive Feasibility Dossier** | Comprehensive report featuring a 0–100 Feasibility Score, financial breakdown, and SWOT matrix. |
+| 🗺️ **Spatial Catchment & Competitor Map** | Concentric radar visualizer displaying 5 km and 10 km radiuses, competitors, and procurement hubs. |
+| 🤖 **Multilingual AI Business Advisor** | Conversational advisor with native **English (EN)**, **Hindi (HI)**, and **Gujarati (GU)** support. |
+| 🎙️ **Voice Input Integration** | Web Speech API speech-to-text allowing rural entrepreneurs to speak their queries directly. |
+| 📄 **Statutory PDF Dossier Export** | Formatted printable loan appraisal document ready for submission to banks or SCA officials. |
+| ⚡ **1-Click Instant Demo Mode** | Pre-loaded candidate appraisal (Vadodara & Narmada, Gujarat) for instant presentation testing. |
+
+---
+
+## 📸 Platform Architecture & Screens
+
+```
+[ Rural Micro-Entrepreneur ]
+              │
+      (Web / Mobile PWA)
+              │
+    ┌─────────▼────────────────────────────────────────┐
+    │  Presentation Layer: Next.js 16 + React 19       │
+    │  - Guided 4-Step Feasibility Wizard (/wizard)    │
+    │  - Executive Feasibility Dashboard (/dashboard)  │
+    │  - Hyper-Local Radial Catchment Map (/map)       │
+    │  - Multilingual AI Assistant (/chat)             │
+    │  - Statutory Feasibility Dossier (/report)       │
+    └─────────┬────────────────────────────────────────┘
+              │
+    ┌─────────▼────────────────────────────────────────┐
+    │  Statutory Financial Structuring Engine          │
+    │  - Project Cost Multiplier: (Margin / 0.10)      │
+    │  - Concessional Debt Formula: (Project × 0.90)   │
+    │  - Statutory Scheme Routing Engine               │
+    │  - Moratorium Grace Period & Amortization        │
+    └─────────┬────────────────────────────────────────┘
+              │
+    ┌─────────▼────────────────────────────────────────┐
+    │  Intelligence & Persistence Tier                 │
+    │  - Gemini API Contextualization Layer            │
+    │  - Spatial Radial Demographics (5 & 10 km)       │
+    │  - SQLite / Prisma ORM Persistence               │
+    └──────────────────────────────────────────────────┘
+```
 
 ---
 
 ## 🛠️ Technology Stack
-- **Framework**: Next.js 16 (App Router, Turbopack)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS, PostCSS
-- **Database & ORM**: SQLite, Prisma ORM
-- **State & UI**: Lucide React Icons, React 19
-- **AI Intelligence**: Gemini API abstraction with autonomous fallback
+
+- **Framework:** Next.js 16 (App Router, Turbopack)
+- **Language:** TypeScript 5.0
+- **Styling:** Tailwind CSS 4, PostCSS
+- **Database:** SQLite with Prisma ORM 5.22
+- **Icons & UI:** Lucide React
+- **AI Engine:** Google Gemini API integration with autonomous deterministic fallback
+- **Audio / Speech:** Web Speech API for voice recognition
 
 ---
 
-## 🚀 Quick Start Guide
+## 💻 Local Installation & Setup
 
-### 1. Installation
+### Prerequisites
+- Node.js (v18.0.0 or higher recommended)
+- npm (v9.0.0 or higher)
+
+### 1. Clone the Repository
 ```bash
+git clone https://github.com/ChiragVasava/gramsaarthi-ai.git
 cd gramsaarthi-ai
+```
+
+### 2. Install Dependencies
+```bash
 npm install
 ```
 
-### 2. Database Initialization
+### 3. Initialize Database & Seed Baseline Data
 ```bash
 npm run db:setup
 ```
+*This command executes Prisma schema synchronization and populates the database with default schemes, demo accounts, and Gujarat baseline market data.*
 
-### 3. Run Development Server
+### 4. Configure Environment Variables
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+*(Optional) Add your Google Gemini API key if you wish to run dynamic LLM completions; otherwise, the built-in realistic fallback engine activates automatically.*
+
+### 5. Launch Development Server
 ```bash
 npm run dev
 ```
@@ -45,19 +150,37 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ---
 
-## 👤 Instant Demo Credentials
-- **Email**: `demo@gramsaarthi.ai`
-- **Password**: `demo123`
-- *Or click **"Try Demo"** directly on the landing page or login screen for instant auto-login.*
+## 🧪 Step-by-Step User Testing Guide
+
+### Option 1: 1-Click Instant Demo
+1. Visit `http://localhost:3000`.
+2. Click **"Try Demo"** in the top navigation bar.
+3. You will be automatically authenticated as candidate `Rajesh Patel` (`demo@gramsaarthi.ai`) and taken to the executive dashboard.
+
+### Option 2: Register a New Enterprise & Run Full Intake
+1. Visit `http://localhost:3000/login`.
+2. Select the **"Register New Account"** tab.
+3. Enter your Name, State (`Gujarat`), District (`Narmada`), Email, and Password.
+4. Click **Complete Registration & Launch Wizard**.
+5. Complete the 4-step wizard:
+   - **Location:** Enter your Taluka/Block and Village.
+   - **Category:** Choose a trade (e.g., *Dairy & Livestock* or *Food Processing & Flour*).
+   - **Capital:** Enter your margin capital (e.g., `₹50,000` or `₹1,00,000`). Observe the instant scheme routing on the right.
+   - **Review:** Select your experience level and click **Generate Complete AI Report**.
+6. Inspect the generated **Feasibility Dossier** at `/report`.
+7. Explore `/calculator`, `/map`, and `/chat` to test real-time data persistence across routes.
 
 ---
 
-## 📂 Core Demo Navigation Routes
-- `/` — Product Landing Page with Problem Statement context
-- `/login` — Secure Auth portal with 1-click Demo Account access
-- `/dashboard` — Executive Enterprise Appraisal Desk
-- `/wizard` — 4-step guided Feasibility & Capital intake wizard
-- `/calculator` — Concessional Financial Calculator & Statutory Scheme Router
-- `/map` — Spatial 5 km & 10 km Catchment & Competitor Map
-- `/chat` — Multilingual AI Advisor with speech input (EN / HI / GU)
-- `/report` — Complete Printable / Exportable Feasibility Dossier
+## 👥 Hackathon Team & Project Info
+
+- **Hackathon:** MSU Hack-A-Throne 2026
+- **Round:** Elimination / Screening Round
+- **Problem Statement:** P11 — *AI-Driven Hyper-Local Business Advisory and Financial Structuring Assistant for Rural Micro-Entrepreneurs*
+- **Team Lead:** Chirag Vasava
+
+---
+
+## 📜 Statutory Disclaimer
+
+*GramSaarthi AI is an advisory and decision-support prototype developed for the MSU Hack-A-Throne 2026 evaluation process. All market size projections, demographic density numbers, and competitor estimates are model-driven indicative approximations. Official credit sanctions remain strictly subject to physical verification and sanctioning by designated State Channelizing Agencies (SCAs) and participating financial institutions.*
