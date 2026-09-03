@@ -14,9 +14,8 @@ Welcome to the comprehensive documentation repository for **GramSaarthi AI**, de
 | [`MANUAL_TEST_REPORT.md`](./MANUAL_TEST_REPORT.md) | End-to-end testing verification logs, persistence mechanics, and step-by-step testing guide. | Quality Assurance & Testers |
 | [`LIMITATIONS_AND_ROADMAP.md`](./LIMITATIONS_AND_ROADMAP.md) | Transparent prototype boundaries, statutory disclaimers, and future scalability roadmap. | Evaluation Committee |
 | [`TECH_STACK.md`](./TECH_STACK.md) | Deep dive into chosen technologies and architectural trade-offs. | Engineering Reviewers |
-| [`GramSaarthi_AI_Hackathon_Presentation.pdf`](./GramSaarthi_AI_Hackathon_Presentation.pdf) | Official 6-slide screening presentation exported in PDF format (<10 MB, strict template adherence). | Screening Jury & Evaluators |
-| [`GramSaarthi_AI_Hackathon_Presentation.pptx`](./GramSaarthi_AI_Hackathon_Presentation.pptx) | Editable PowerPoint source deck based on the official MSU Hack-A-Throne template. | Presentation Team |
-| [`architecture_diagram.png`](./architecture_diagram.png) | High-resolution end-to-end system architecture diagram used on Slide 5. | Architecture Reviewers |
+| [`DEPLOYMENT_CASE_STUDY.md`](./DEPLOYMENT_CASE_STUDY.md) | Full case study covering Vercel + AWS dual deployment, Docker multi-stage build, and production troubleshooting log. | DevOps Engineers & Interviewers |
+| [`TERRAFORM.md`](./TERRAFORM.md) | Comprehensive master guide for Terraform IaC, HCL code breakdown, cloud-init scripts, and AI teaching prompt. | Cloud Engineers & Learners |
 | [`HACKATHON_SUBMISSION_GUIDE.md`](./HACKATHON_SUBMISSION_GUIDE.md) | Form fields, slide-by-slide PPT guide, and submission checklist for MSU Hack-A-Throne 2026. | Team Members |
 
 ---
