@@ -19,8 +19,10 @@ import {
   generateRepaymentSchedule, 
   calculateWorkingCapital 
 } from '@/lib/financial-engine'
+import { useLanguage } from '@/lib/language-context'
 
 export default function CalculatorPage() {
+  const { t } = useLanguage()
   const [margin, setMargin] = useState<number>(100000)
   const [category, setCategory] = useState<string>('Dairy')
 
@@ -37,13 +39,13 @@ export default function CalculatorPage() {
         <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2">
-              <Calculator className="w-3.5 h-3.5" /> Module 2: Concessional Financial Engine
+              <Calculator className="w-3.5 h-3.5" /> {t('calc.module')}
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-              Smart Financial Structuring & Scheme Router
+              {t('calc.title')}
             </h1>
             <p className="text-xs text-gray-500 mt-1">
-              Deterministic, non-LLM statutory calculations complying with National Concessional Credit Guidelines.
+              {t('calc.subtitle')}
             </p>
           </div>
           <div className="text-xs text-gray-400 bg-gray-50 p-2.5 rounded-xl border font-mono">
@@ -56,12 +58,12 @@ export default function CalculatorPage() {
           {/* MARGIN INPUT CARD */}
           <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-5">
             <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-              <Coins className="w-5 h-5 text-emerald-600" /> Equity / Margin Capital
+              <Coins className="w-5 h-5 text-emerald-600" /> {t('calc.equityHeading')}
             </h3>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Your Available Contribution (₹)
+                {t('calc.availableContrib')}
               </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 font-bold text-gray-400">₹</span>
@@ -97,7 +99,7 @@ export default function CalculatorPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Enterprise Domain for Working Capital
+                {t('calc.domainLabel')}
               </label>
               <select
                 value={category}
@@ -117,7 +119,7 @@ export default function CalculatorPage() {
                 <AlertCircle className="w-3.5 h-3.5 text-amber-700" /> Threshold Routing Boundary:
               </div>
               <p className="leading-relaxed">
-                Projects ≤ ₹1.40L route to <strong>Micro Finance (6.5%)</strong>. Projects between ₹1.40L and ₹50L route to <strong>Term Loan (8.0%)</strong>.
+                {t('calc.thresholdAlert')}
               </p>
             </div>
           </div>
@@ -127,7 +129,7 @@ export default function CalculatorPage() {
             <div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-emerald-300 bg-emerald-700/60 px-3 py-1 rounded-full uppercase tracking-wider">
-                  Automated Scheme Qualification
+                  {t('calc.schemeQualification')}
                 </span>
                 <span className="text-xs font-mono text-emerald-300">
                   {fin.schemeCode === 'micro' ? 'PROJECT COST ≤ ₹1.4L' : 'PROJECT COST &gt; ₹1.4L'}
@@ -147,19 +149,19 @@ export default function CalculatorPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-emerald-700/60">
                 <div>
-                  <span className="text-[11px] text-emerald-300 uppercase">Feasible Project</span>
+                  <span className="text-[11px] text-emerald-300 uppercase">{t('calc.feasibleProject')}</span>
                   <p className="text-xl sm:text-2xl font-extrabold mt-0.5">₹{fin.projectCost.toLocaleString('en-IN')}</p>
                 </div>
                 <div>
-                  <span className="text-[11px] text-emerald-300 uppercase">Loan Amount (90%)</span>
+                  <span className="text-[11px] text-emerald-300 uppercase">{t('calc.loanAmount')}</span>
                   <p className="text-xl sm:text-2xl font-extrabold mt-0.5">₹{fin.loanAmount.toLocaleString('en-IN')}</p>
                 </div>
                 <div>
-                  <span className="text-[11px] text-emerald-300 uppercase">Interest Rate</span>
+                  <span className="text-[11px] text-emerald-300 uppercase">{t('calc.interestRate')}</span>
                   <p className="text-xl sm:text-2xl font-extrabold mt-0.5">{fin.interestRate}% p.a.</p>
                 </div>
                 <div>
-                  <span className="text-[11px] text-emerald-300 uppercase">Monthly EMI</span>
+                  <span className="text-[11px] text-emerald-300 uppercase">{t('calc.monthlyEmi')}</span>
                   <p className="text-xl sm:text-2xl font-extrabold mt-0.5">₹{fin.emiMonthly.toLocaleString('en-IN')}</p>
                 </div>
               </div>
@@ -168,13 +170,13 @@ export default function CalculatorPage() {
             <div className="mt-6 pt-4 border-t border-emerald-700/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-emerald-200">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Tenure: {fin.tenureYears} Years | Moratorium Grace: {fin.moratoriumMonths} Months</span>
+                <span>{t('calc.tenure')}: {fin.tenureYears} {t('calc.years')} | {t('calc.moratoriumGrace')}: {fin.moratoriumMonths} {t('calc.months')}</span>
               </div>
               <Link
                 href="/report"
                 className="bg-white text-emerald-950 font-bold px-4 py-2 rounded-xl text-xs hover:bg-emerald-50 transition shadow"
               >
-                Compile in Feasibility Report →
+                {t('calc.compileReport')}
               </Link>
             </div>
           </div>
@@ -184,11 +186,11 @@ export default function CalculatorPage() {
         <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b pb-3">
             <div>
-              <h3 className="font-bold text-gray-900 text-base">Working Capital & Operational Buffer Guidance</h3>
-              <p className="text-xs text-gray-500">Preventing cashflow strangulation during lactation/production startup</p>
+              <h3 className="font-bold text-gray-900 text-base">{t('calc.workingCapitalHeading')}</h3>
+              <p className="text-xs text-gray-500">{t('calc.workingCapitalSub')}</p>
             </div>
             <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
-              Est. Reserve: ₹{wc.total.toLocaleString('en-IN')}
+              {t('calc.estReserve')}: ₹{wc.total.toLocaleString('en-IN')}
             </span>
           </div>
 
@@ -208,14 +210,14 @@ export default function CalculatorPage() {
             <div>
               <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
                 <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-                Indicative Quarterly Amortization Schedule
+                {t('calc.amortizationHeading')}
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                Reflecting statutory grace moratorium prior to principal and interest amortization.
+                {t('calc.amortizationSub')}
               </p>
             </div>
             <span className="text-xs font-mono bg-gray-100 text-gray-700 px-2.5 py-1 rounded-lg">
-              {schedule.length} Quarters Modeled
+              {schedule.length} {t('calc.quartersModeled')}
             </span>
           </div>
 
@@ -223,12 +225,12 @@ export default function CalculatorPage() {
             <table className="w-full text-left text-xs">
               <thead className="bg-gray-50 text-gray-500 uppercase font-semibold border-b">
                 <tr>
-                  <th className="py-3 px-4">Quarter</th>
-                  <th className="py-3 px-4">Type</th>
-                  <th className="py-3 px-4">Quarterly Payment</th>
-                  <th className="py-3 px-4">Principal Amortized</th>
-                  <th className="py-3 px-4">Interest Outflow</th>
-                  <th className="py-3 px-4">Closing Balance</th>
+                  <th className="py-3 px-4">{t('calc.quarter')}</th>
+                  <th className="py-3 px-4">{t('calc.type')}</th>
+                  <th className="py-3 px-4">{t('calc.quarterlyPayment')}</th>
+                  <th className="py-3 px-4">{t('calc.principalAmortized')}</th>
+                  <th className="py-3 px-4">{t('calc.interestOutflow')}</th>
+                  <th className="py-3 px-4">{t('calc.closingBalance')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -238,11 +240,11 @@ export default function CalculatorPage() {
                     <td className="py-3 px-4">
                       {row.isMoratorium ? (
                         <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">
-                          Moratorium Grace
+                          {t('calc.moratoriumGraceTag')}
                         </span>
                       ) : (
                         <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
-                          Active Amortization
+                          {t('calc.activeAmortizationTag')}
                         </span>
                       )}
                     </td>

@@ -174,7 +174,7 @@ export default function ReportPage() {
                 <span className="font-extrabold text-gray-900 text-lg">GramSaarthi AI</span>
               </div>
               <p className="text-xs text-gray-500 font-medium max-w-sm">
-                National Micro-Enterprise Evaluation Engine · Concessional Credit Appraisal Framework
+                {t('report.subTitle')}
               </p>
             </div>
             <div className="text-left sm:text-right text-xs text-gray-600 space-y-1">
@@ -189,28 +189,28 @@ export default function ReportPage() {
             <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-800 to-emerald-950 text-white md:col-span-3 flex flex-col justify-between space-y-3">
               <div>
                 <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest bg-emerald-700/60 px-2 py-0.5 rounded-full">
-                  Executive Appraisal
+                  {t('report.execBadge')}
                 </span>
                 <h3 className="text-xl font-bold mt-2">
-                  Viable Enterprise Opportunity: {data.category} in Vadodara Rural Belt
+                  {t('report.viableHeading')}: {data.category} ({data.location})
                 </h3>
                 <p className="text-xs text-emerald-100 mt-2 leading-relaxed">
-                  The candidate business displays resilient underlying fundamentals. Favorable local cooperative integration, coupled with rapid demand expansion across the Savli–Vadodara peri-urban corridor, supports an investment rating above baseline. The proposed 10% equity commitment qualifies under the statutory <strong>{data.scheme}</strong>.
+                  {t('report.execSummary')} ({data.scheme}).
                 </p>
               </div>
 
               <div className="flex items-center gap-4 text-xs text-emerald-300 border-t border-emerald-700/60 pt-3">
-                <span>Estimated Customer Base: <strong>8,000–12,000</strong></span>
+                <span>{t('report.custBase')}</span>
                 <span>•</span>
-                <span>Catchment Radius: <strong>10 km</strong></span>
+                <span>{t('report.radius')}</span>
               </div>
             </div>
 
             <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col justify-center items-center text-center">
-              <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Feasibility Score</span>
+              <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">{t('report.scoreBadge')}</span>
               <div className="text-5xl font-black text-emerald-800 my-2">{data.score}</div>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-full">
-                High Viability ✓
+                {t('report.highViability')}
               </span>
             </div>
           </div>
@@ -218,52 +218,52 @@ export default function ReportPage() {
           {/* FINANCIAL STRUCTURING METRICS TABLE */}
           <div className="space-y-3">
             <h3 className="font-bold text-gray-900 text-base flex items-center gap-2 border-b pb-2">
-              <Coins className="w-5 h-5 text-emerald-700" /> Statutory Financial Structuring (Module 2)
+              <Coins className="w-5 h-5 text-emerald-700" /> {t('report.financialHeading')}
             </h3>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Own Margin (10%)</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.ownMargin')}</span>
                 <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.marginCapital.toLocaleString('en-IN')}</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">Statutory commitment</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{t('report.statutoryCommitment')}</p>
               </div>
 
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Feasible Project Cost</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.feasibleProject')}</span>
                 <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.projectCost.toLocaleString('en-IN')}</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">Margin ÷ 10%</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{t('report.marginMultiplier')}</p>
               </div>
 
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Loan Principal (90%)</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.loanPrincipal')}</span>
                 <p className="text-base font-extrabold text-emerald-800 mt-0.5">₹{data.loanAmount.toLocaleString('en-IN')}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{data.scheme}</p>
               </div>
 
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Monthly Repayment</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.monthlyEmi')}</span>
                 <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.emiMonthly.toLocaleString('en-IN')}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{data.interestRate}% p.a. / {data.tenureYears} yrs</p>
               </div>
             </div>
 
             <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/60 text-xs text-emerald-950 flex items-center justify-between">
-              <span>Moratorium Provision: <strong>{data.moratoriumMonths} Months Interest Grace Period</strong> prior to principal repayment.</span>
-              <span className="font-semibold text-emerald-800">Concessional Credit Verified</span>
+              <span>{t('report.moratoriumProvision')}</span>
+              <span className="font-semibold text-emerald-800">{t('report.concessionalVerified')}</span>
             </div>
           </div>
 
           {/* SWOT ANALYSIS MATRIX */}
           <div className="space-y-3">
             <h3 className="font-bold text-gray-900 text-base flex items-center gap-2 border-b pb-2">
-              <Layers className="w-5 h-5 text-emerald-700" /> Hyper-Local SWOT Matrix (Module 1)
+              <Layers className="w-5 h-5 text-emerald-700" /> {t('report.swotHeading')}
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* STRENGTHS */}
               <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200 space-y-2">
                 <div className="font-bold text-emerald-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-700" /> Strengths (Local Catalysts)
+                  <CheckCircle2 className="w-4 h-4 text-emerald-700" /> {t('report.strengths')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
                   <li>Direct access to established Gujarat cooperative network (Amul daily routes).</li>
@@ -276,7 +276,7 @@ export default function ReportPage() {
               {/* WEAKNESSES */}
               <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-200 space-y-2">
                 <div className="font-bold text-rose-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4 text-rose-700" /> Weaknesses (Internal Constraints)
+                  <ShieldAlert className="w-4 h-4 text-rose-700" /> {t('report.weaknesses')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
                   <li>High operational labor intensity requiring uninterrupted bi-daily attention.</li>
@@ -288,7 +288,7 @@ export default function ReportPage() {
               {/* OPPORTUNITIES */}
               <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200 space-y-2">
                 <div className="font-bold text-blue-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <TrendingUp className="w-4 h-4 text-blue-700" /> Opportunities (Market Upside)
+                  <TrendingUp className="w-4 h-4 text-blue-700" /> {t('report.opportunities')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
                   <li>Value-addition into Ghee (₹550–680/kg) and Paneer (₹320/kg) multiplies gross margins 3x.</li>
@@ -300,7 +300,7 @@ export default function ReportPage() {
               {/* THREATS */}
               <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200 space-y-2">
                 <div className="font-bold text-amber-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldAlert className="w-4 h-4 text-amber-700" /> Threats (Environmental & Supply Risks)
+                  <ShieldAlert className="w-4 h-4 text-amber-700" /> {t('report.threats')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
                   <li>Severe summer fodder price surges (up to 30% inflation in peak dry periods).</li>
@@ -314,30 +314,30 @@ export default function ReportPage() {
           {/* LOCAL COMPETITOR DENSITY & PRICING STRATEGY */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
             <div className="space-y-2">
-              <h4 className="font-bold text-gray-900 text-sm">Competitor Mapping Density</h4>
+              <h4 className="font-bold text-gray-900 text-sm">{t('report.competitorDensity')}</h4>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Within the immediate 5 km radius of Tarsali, approximately <strong>8–11 traditional dairy farmers</strong> operate. However, 100% of existing players sell non-differentiated raw milk to the primary society. No local player currently converts surplus yield into packaged Ghee or curd, creating a wide-open value-addition niche.
+                Within the immediate 5 km radius of {data.location}, local micro-producers operate. Value-addition into processed goods and institutional bulk procurement provides open market opportunity.
               </p>
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-bold text-gray-900 text-sm">Target Pricing Strategy</h4>
+              <h4 className="font-bold text-gray-900 text-sm">{t('report.pricingStrategy')}</h4>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Raw Milk</span>
-                  <p className="font-bold text-gray-900">₹42 – ₹48 / L</p>
+                  <span className="text-gray-500 font-medium">Commodity Baseline</span>
+                  <p className="font-bold text-gray-900">₹42 – ₹48 / unit</p>
                 </div>
                 <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Clarified Ghee</span>
-                  <p className="font-bold text-gray-900">₹550 – ₹680 / kg</p>
+                  <span className="text-gray-500 font-medium">Value-Added Grade</span>
+                  <p className="font-bold text-gray-900">₹550 – ₹680 / unit</p>
                 </div>
                 <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Fresh Paneer</span>
-                  <p className="font-bold text-gray-900">₹280 – ₹350 / kg</p>
+                  <span className="text-gray-500 font-medium">Direct Institutional</span>
+                  <p className="font-bold text-gray-900">₹280 – ₹350 / unit</p>
                 </div>
                 <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Set Curd (Dahi)</span>
-                  <p className="font-bold text-gray-900">₹60 – ₹80 / 500g</p>
+                  <span className="text-gray-500 font-medium">Packaged Retail</span>
+                  <p className="font-bold text-gray-900">₹60 – ₹80 / unit</p>
                 </div>
               </div>
             </div>
@@ -345,7 +345,7 @@ export default function ReportPage() {
 
           {/* STATUTORY DISCLAIMER */}
           <div className="pt-6 border-t text-[11px] text-gray-400 leading-relaxed">
-            <strong>Statutory Disclaimer:</strong> This Feasibility Dossier is synthesized by GramSaarthi AI for the MSU Hack-A-Throne 2026 evaluation process. All market size figures, demographic estimations, and competitor mappings represent model-driven indicative approximations. Official credit sanctioning remains strictly subject to physical scrutiny by designated State Channelizing Agencies (SCA) and participating financial institutions.
+            {t('report.statutoryDisclaimer')}
           </div>
         </div>
       </div>
