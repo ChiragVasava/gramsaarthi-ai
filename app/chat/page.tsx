@@ -21,6 +21,83 @@ interface Message {
   timestamp: string
 }
 
+function FormattedMessage({ content, isUser }: { content: string; isUser: boolean }) {
+  const lines = content.split('\n')
+
+  const formatText = (text: string) => {
+    // Regex for bold **...** and italic *...*
+    const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
+    return parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+        return (
+          <strong key={i} className={`font-bold ${isUser ? 'text-white' : 'text-gray-900'}`}>
+            {part.slice(2, -2)}
+          </strong>
+        )
+      }
+      if (part.startsWith('*') && part.endsWith('*') && part.length > 2) {
+        return (
+          <em key={i} className={`italic ${isUser ? 'text-emerald-100' : 'text-gray-600'}`}>
+            {part.slice(1, -1)}
+          </em>
+        )
+      }
+      return part
+    })
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {lines.map((line, idx) => {
+        const trimmed = line.trim()
+        if (!trimmed) {
+          return <div key={idx} className="h-1.5" />
+        }
+
+        // Bullet point: •, - , * 
+        if (trimmed.startsWith('•') || trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+          const body = trimmed.replace(/^[•\-\*]\s*/, '')
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-1">
+              <span className={`font-bold ${isUser ? 'text-emerald-200' : 'text-emerald-600'}`}>•</span>
+              <div className="flex-1">{formatText(body)}</div>
+            </div>
+          )
+        }
+
+        // Numbered list: 1. 2. etc.
+        const numMatch = trimmed.match(/^(\d+\.)\s+(.*)/)
+        if (numMatch) {
+          return (
+            <div key={idx} className="flex items-start gap-2 pl-1">
+              <span className={`font-bold text-xs mt-0.5 ${isUser ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                {numMatch[1]}
+              </span>
+              <div className="flex-1">{formatText(numMatch[2])}</div>
+            </div>
+          )
+        }
+
+        // Headings: ### or ##
+        if (trimmed.startsWith('#')) {
+          const headingText = trimmed.replace(/^#+\s*/, '')
+          return (
+            <div key={idx} className={`font-extrabold text-sm mt-2 mb-1 ${isUser ? 'text-white' : 'text-gray-900'}`}>
+              {formatText(headingText)}
+            </div>
+          )
+        }
+
+        return (
+          <p key={idx} className="leading-relaxed">
+            {formatText(line)}
+          </p>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -42,7 +119,7 @@ export default function ChatPage() {
     "What government subsidies can I combine with this Term Loan?"
   ]
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = textToSend || input
     if (!query.trim()) return
 
@@ -53,40 +130,57 @@ export default function ChatPage() {
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
 
-    setMessages((prev) => [...prev, userMsg])
+    const nextMessages = [...messages, userMsg]
+    setMessages(nextMessages)
     setInput('')
     setLoading(true)
 
-    // Contextual simulated responses in Hackathon environment
-    setTimeout(() => {
-      let reply = ""
-      const q = query.toLowerCase()
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: query,
+          context: {
+            category: 'Dairy',
+            location: 'Savli, Vadodara, Gujarat',
+            marginCapital: 100000,
+            scheme: 'term',
+            feasibilityScore: 84,
+          },
+          history: nextMessages.map((m) => ({ role: m.role, content: m.content })),
+          language: lang.toLowerCase(),
+        }),
+      })
 
-      if (q.includes('price') || q.includes('ghee') || q.includes('milk')) {
-        reply = lang === 'HI' 
-          ? "डेयरी में वैल्यू-एडिशन सबसे ज्यादा मुनाफा देता है। कच्चा दूध सहकारी मंडली में ₹42-48/लीटर बिकता है। अगर आप अतिरिक्त दूध से शुद्ध घी बनाते हैं, तो वह ₹600-680/किलो बिकता है, जिससे आपका ग्रॉस मार्जिन 3 गुना बढ़ जाता है!"
-          : "Value-addition is the secret to high dairy margins. Raw milk yields ₹42–48/litre at the local cooperative society. Converting surplus evening milk into clarified Desi Ghee fetches ₹550–680/kg in nearby Vadodara markets, providing 3x higher gross margins!"
-      } else if (q.includes('fodder') || q.includes('summer')) {
-        reply = lang === 'HI' 
-          ? "गर्मियों में सूखे चारे के दाम 25% तक बढ़ जाते हैं। हमारा सुझाव है कि आप मानसून के बाद साइलेज (हरा चारा संरक्षण) तैयार रखें और कम से कम ₹30,000 का वर्किंग कैपिटल बफर पहले से सुरक्षित रखें।"
-          : "Dry fodder rates surge by 20–30% during May-June. We advise preparing silage pits right after the monsoon harvest and keeping a dedicated 3-month working capital reserve (₹35,000–₹45,000) strictly for nutritional feed concentrates."
-      } else if (q.includes('moratorium') || q.includes('grace')) {
-        reply = "Under the Term Loan Scheme (P11 Guidelines), the first 6 months are an interest grace moratorium. You do not pay principal installments during this startup window. Use this grace period to settle your cattle lactation cycle and build customer routes before the ₹14,025 monthly EMI starts!"
+      if (res.ok) {
+        const data = await res.json()
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: Math.random().toString(),
+            role: 'assistant',
+            content: data.reply || "No response received.",
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ])
       } else {
-        reply = "That is an essential consideration for Savli block. Based on our hyper-local database, establishing direct institutional contracts with nearby boarding schools and dhabas along the Waghodia-Savli highway will provide steady cashflow alongside your daily cooperative collection!"
+        throw new Error('API request failed')
       }
-
+    } catch (err) {
+      console.error('Chat error:', err)
       setMessages((prev) => [
         ...prev,
         {
           id: Math.random().toString(),
           role: 'assistant',
-          content: reply,
+          content: "Sorry, I couldn't reach the AI service right now. Please check your network or try again.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         }
       ])
+    } finally {
       setLoading(false)
-    }, 800)
+    }
   }
 
   const toggleVoice = () => {
@@ -123,7 +217,13 @@ export default function ChatPage() {
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="font-extrabold text-gray-900 text-lg">GramSaarthi Multilingual AI Advisor</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-extrabold text-gray-900 text-lg">GramSaarthi Multilingual AI Advisor</h1>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Gemini Live
+                </span>
+              </div>
               <p className="text-xs text-emerald-700 font-semibold">Active Profile: Dairy Enterprise · Vadodara, Gujarat</p>
             </div>
           </div>
@@ -172,7 +272,7 @@ export default function ChatPage() {
                     : 'bg-gray-50 border border-gray-200 text-gray-800 rounded-tl-none'
                 }`}
               >
-                <p className="whitespace-pre-line">{m.content}</p>
+                <FormattedMessage content={m.content} isUser={m.role === 'user'} />
                 <span
                   className={`block text-[10px] mt-1.5 ${
                     m.role === 'user' ? 'text-emerald-200 text-right' : 'text-gray-400'
