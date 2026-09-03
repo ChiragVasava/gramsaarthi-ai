@@ -13,7 +13,7 @@ variable "instance_type" {
 variable "domain_name" {
   description = "Domain name for this deployment"
   type        = string
-  default     = "aws.chiragvasava.me"
+  default     = "gramsaarthi-ai.chiragvasava.me"
 }
 
 variable "app_name" {
