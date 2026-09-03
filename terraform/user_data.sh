@@ -30,9 +30,9 @@ git clone https://github.com/ChiragVasava/gramsaarthi-ai.git .
 # Start Docker container
 docker compose up -d --build
 
-# Configure Caddy Reverse Proxy with Automatic SSL
+# Configure Caddy Reverse Proxy with Automatic SSL for both subdomains
 cat <<EOF > /etc/caddy/Caddyfile
-aws.chiragvasava.me {
+gramsaarthi-ai.chiragvasava.me, aws.chiragvasava.me {
     reverse_proxy localhost:3000
 }
 EOF
