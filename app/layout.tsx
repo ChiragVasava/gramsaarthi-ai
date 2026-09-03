@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { LanguageProvider } from "@/lib/language-context";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -42,8 +43,10 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} font-sans bg-gray-50`}>
-        {children}
-        <Toaster />
+        <LanguageProvider>
+          {children}
+          <Toaster />
+        </LanguageProvider>
       </body>
     </html>
   );

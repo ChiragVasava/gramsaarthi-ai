@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppShell from '@/components/layout/AppShell'
 import { 
   Bot, 
@@ -13,6 +13,7 @@ import {
   CheckCircle,
   HelpCircle
 } from 'lucide-react'
+import { useLanguage, Language } from '@/lib/language-context'
 
 interface Message {
   id: string
@@ -99,24 +100,89 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
 }
 
 export default function ChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Namaste Rajeshji! 🙏 I am GramSaarthi AI, your dedicated rural enterprise advisor. I have reviewed your proposed Dairy Enterprise in Savli, Vadodara. You have ₹1,00,000 margin capital, qualifying for a ₹9,00,000 Term Loan at 8% p.a. with 6 months grace period. How can I guide your operations or marketing strategy today?",
-      timestamp: '10:00 AM'
-    }
-  ])
+  const { language, setLanguage, t } = useLanguage()
+  const [userProfile, setUserProfile] = useState({
+    name: 'Entrepreneur',
+    category: 'Dairy',
+    location: 'Savli, Vadodara, Gujarat',
+    marginCapital: 100000,
+    scheme: 'Term Loan Scheme',
+    loanAmount: 900000,
+    score: 84
+  })
+
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
-  const [lang, setLang] = useState<'EN' | 'HI' | 'GU'>('EN')
+
+  useEffect(() => {
+    let name = 'Entrepreneur'
+    const userStr = localStorage.getItem('gs_user')
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr)
+        if (u.name) name = u.name
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    let category = 'Dairy'
+    let location = 'Savli, Vadodara, Gujarat'
+    let margin = 100000
+    let scheme = 'Term Loan Scheme'
+    let loan = 900000
+    let score = 84
+
+    const saved = localStorage.getItem('gs_analysis')
+    if (saved) {
+      try {
+        const a = JSON.parse(saved)
+        category = a.category || category
+        const locParts = [a.village, a.block, a.district, a.state].filter(Boolean)
+        if (locParts.length > 0) location = locParts.join(', ')
+        margin = a.marginCapital || margin
+        scheme = a.scheme === 'micro' ? 'Micro Finance Scheme' : 'Term Loan Scheme'
+        loan = a.loanAmount || loan
+        score = a.feasibilityScore || score
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    setUserProfile({
+      name,
+      category,
+      location,
+      marginCapital: margin,
+      scheme,
+      loanAmount: loan,
+      score
+    })
+
+    // Create dynamic initial greeting with actual user's name and business details
+    const greetingText = language === 'HI'
+      ? `नमस्ते ${name} जी! 🙏 मैं ग्रामसारथी एआई हूँ, आपका समर्पित ग्रामीण व्यापार सलाहकार। मैंने ${location} में आपके प्रस्तावित ${category} उद्यम का विवरण देखा है। आपकी ₹${margin.toLocaleString('en-IN')} की मार्जिन पूंजी के साथ, आप ₹${loan.toLocaleString('en-IN')} के ${scheme} के पात्र हैं। आज मैं आपके व्यापार नियोजन या विपणन रणनीति में क्या सहायता कर सकता हूँ?`
+      : language === 'GU'
+        ? `નમસ્તે ${name} ભાઈ/બહેન! 🙏 હું ગ્રામસારથી એઆઈ છું, તમારો ગ્રામીણ બિઝનેસ સલાહકાર. મેં ${location} માં તમારા સૂચિત ${category} વ્યવસાયની વિગતો ચકાસી છે. તમારી ₹${margin.toLocaleString('en-IN')} ની માર્જિન મૂડી સાથે, તમે ₹${loan.toLocaleString('en-IN')} ની ${scheme} માટે પાત્ર છો. આજે હું તમારા વ્યવસાય આયોજન કે વેચાણ વ્યૂહરચનામાં કેવી રીતે મદદ કરી શકું?`
+        : `Namaste ${name}! 🙏 I am GramSaarthi AI, your dedicated rural enterprise advisor. I have reviewed your proposed ${category} Enterprise in ${location}. With your ₹${margin.toLocaleString('en-IN')} margin capital, you qualify for a ₹${loan.toLocaleString('en-IN')} ${scheme}. How can I guide your operations, pricing, or government scheme strategy today?`
+
+    setMessages([
+      {
+        id: '1',
+        role: 'assistant',
+        content: greetingText,
+        timestamp: '10:00 AM'
+      }
+    ])
+  }, [language])
 
   const prompts = [
-    "What is the best pricing for value-added Ghee vs raw milk?",
-    "How should I manage fodder costs during hot summer months?",
-    "Can you explain how the 6-month moratorium grace period works?",
-    "What government subsidies can I combine with this Term Loan?"
+    "What is the best pricing strategy vs local competitors?",
+    "How should I manage operational costs in the first 6 months?",
+    "Can you explain how the statutory moratorium grace period works?",
+    "What government subsidies can I combine with this loan scheme?"
   ]
 
   const handleSend = async (textToSend?: string) => {
@@ -142,14 +208,15 @@ export default function ChatPage() {
         body: JSON.stringify({
           message: query,
           context: {
-            category: 'Dairy',
-            location: 'Savli, Vadodara, Gujarat',
-            marginCapital: 100000,
-            scheme: 'term',
-            feasibilityScore: 84,
+            userName: userProfile.name,
+            category: userProfile.category,
+            location: userProfile.location,
+            marginCapital: userProfile.marginCapital,
+            scheme: userProfile.scheme,
+            feasibilityScore: userProfile.score,
           },
           history: nextMessages.map((m) => ({ role: m.role, content: m.content })),
-          language: lang.toLowerCase(),
+          language: language.toLowerCase(),
         }),
       })
 
@@ -193,10 +260,9 @@ export default function ChatPage() {
       setIsListening(false)
     } else {
       setIsListening(true)
-      // Simulate or start Web Speech API
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       const recognition = new SpeechRecognition()
-      recognition.lang = lang === 'HI' ? 'hi-IN' : lang === 'GU' ? 'gu-IN' : 'en-IN'
+      recognition.lang = language === 'HI' ? 'hi-IN' : language === 'GU' ? 'gu-IN' : 'en-IN'
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript
         setInput(transcript)
@@ -218,25 +284,27 @@ export default function ChatPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-gray-900 text-lg">GramSaarthi Multilingual AI Advisor</h1>
+                <h1 className="font-extrabold text-gray-900 text-lg">{t('chat.title')}</h1>
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Gemini Live
+                  {t('chat.live')}
                 </span>
               </div>
-              <p className="text-xs text-emerald-700 font-semibold">Active Profile: Dairy Enterprise · Vadodara, Gujarat</p>
+              <p className="text-xs text-emerald-700 font-semibold">
+                {t('chat.activeProfile')}: {userProfile.name} · {userProfile.category} ({userProfile.location})
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <Languages className="w-4 h-4 text-gray-400" />
             <div className="flex gap-1 text-xs font-bold bg-gray-100 p-1 rounded-xl">
-              {(['EN', 'HI', 'GU'] as const).map((l) => (
+              {(['EN', 'HI', 'GU'] as Language[]).map((l) => (
                 <button
                   key={l}
-                  onClick={() => setLang(l)}
+                  onClick={() => setLanguage(l)}
                   className={`px-2 py-1 rounded-lg transition ${
-                    lang === l ? 'bg-emerald-700 text-white' : 'text-gray-600 hover:bg-gray-200'
+                    language === l ? 'bg-emerald-700 text-white' : 'text-gray-600 hover:bg-gray-200'
                   }`}
                 >
                   {l}
@@ -289,8 +357,12 @@ export default function ChatPage() {
               <div className="w-8 h-8 rounded-full bg-gray-100 text-emerald-800 border flex items-center justify-center">
                 <Bot className="w-4 h-4 text-emerald-700 animate-spin" />
               </div>
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs text-gray-500 font-medium">
-                Synthesizing advice for Vadodara catchment...
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-2xl text-xs text-gray-600 font-medium">
+                {language === 'HI' 
+                  ? `${userProfile.location} के लिए सलाह तैयार की जा रही है...` 
+                  : language === 'GU' 
+                    ? `${userProfile.location} માટે વિશ્લેષણ તૈયાર થઈ રહ્યું છે...`
+                    : `Synthesizing advice for ${userProfile.location}...`}
               </div>
             </div>
           )}
@@ -328,9 +400,11 @@ export default function ChatPage() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={
-              lang === 'HI'
-                ? "यहाँ अपना प्रश्न लिखें (उदा. डेयरी में चारा लागत कैसे कम करें?)"
-                : "Ask GramSaarthi about pricing, scheme rules, or operational risks..."
+              language === 'HI'
+                ? "यहाँ अपना प्रश्न लिखें (उदा. मूल्य निर्धारण या सरकारी सब्सिडी के बारे में पूछें...)"
+                : language === 'GU'
+                  ? "અહીં તમારો પ્રશ્ન લખો (દા.ત. ભાવ નિર્ધારણ કે સરકારી યોજનાઓ વિશે પૂછો...)"
+                  : "Ask about pricing, government subsidies, loan schemes, or operations..."
             }
             className="flex-1 px-4 py-2 text-sm text-gray-900 outline-none"
           />

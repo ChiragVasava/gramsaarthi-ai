@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AppShell from '@/components/layout/AppShell'
 import Link from 'next/link'
 import { 
@@ -17,10 +17,15 @@ import {
   CheckCircle2, 
   Clock, 
   ChevronRight,
-  Bot
+  Bot,
+  Loader2
 } from 'lucide-react'
+import { useLanguage } from '@/lib/language-context'
 
 export default function ReportPage() {
+  const { t } = useLanguage()
+  const dossierRef = useRef<HTMLDivElement>(null)
+  const [downloading, setDownloading] = useState(false)
   const [data, setData] = useState({
     entrepreneur: 'Rajesh Patel',
     location: 'Tarsali, Savli Block, Vadodara, Gujarat',
@@ -38,12 +43,24 @@ export default function ReportPage() {
   })
 
   useEffect(() => {
+    let entrepreneurName = 'Rajesh Patel'
+    const userStr = localStorage.getItem('gs_user')
+    if (userStr) {
+      try {
+        const u = JSON.parse(userStr)
+        if (u.name) entrepreneurName = u.name
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
     const saved = localStorage.getItem('gs_analysis')
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
         setData((prev) => ({
           ...prev,
+          entrepreneur: entrepreneurName,
           category: parsed.category || prev.category,
           location: `${parsed.village ? parsed.village + ', ' : ''}${parsed.block ? parsed.block + ', ' : ''}${parsed.district || 'Vadodara'}, ${parsed.state || 'Gujarat'}`,
           marginCapital: parsed.marginCapital || prev.marginCapital,
@@ -59,11 +76,52 @@ export default function ReportPage() {
       } catch (e) {
         console.error(e)
       }
+    } else {
+      setData((prev) => ({ ...prev, entrepreneur: entrepreneurName }))
     }
   }, [])
 
-  const handlePrint = () => {
-    window.print()
+  // 1-Click Direct Download as real PDF file
+  const handleDirectDownload = async () => {
+    if (!dossierRef.current) return
+    setDownloading(true)
+    try {
+      const html2canvas = (await import('html2canvas')).default
+      const { jsPDF } = await import('jspdf')
+
+      const canvas = await html2canvas(dossierRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff'
+      })
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const imgWidth = 210
+      const pageHeight = 295
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let heightLeft = imgHeight
+      let position = 0
+
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+
+      const cleanFileName = `GramSaarthi_Feasibility_Report_${data.category}_${data.entrepreneur.replace(/\s+/g, '_')}.pdf`
+      pdf.save(cleanFileName)
+    } catch (err) {
+      console.error('Direct PDF download error, falling back to window.print():', err)
+      window.print()
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -73,30 +131,39 @@ export default function ReportPage() {
         <div className="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
           <div>
             <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              Official Synthesis · Dossier #GS-2026-P11
+              {t('report.officialBadge')}
             </span>
             <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mt-1">
-              Hyper-Local Business Feasibility & Financial Report
+              {t('report.title')}
             </h1>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <button
-              onClick={handlePrint}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow transition"
+              onClick={handleDirectDownload}
+              disabled={downloading}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-60 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow transition"
             >
-              <Download className="w-4 h-4" /> Download / Print PDF
+              {downloading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> {t('report.downloading')}
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" /> {t('report.downloadPdf')}
+                </>
+              )}
             </button>
             <Link
               href="/chat"
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition"
             >
-              <Bot className="w-4 h-4 text-emerald-700" /> Discuss with AI
+              <Bot className="w-4 h-4 text-emerald-700" /> {t('report.discussAI')}
             </Link>
           </div>
         </div>
 
-        {/* PRINTABLE DOSSIER CONTAINER */}
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm space-y-8 print:shadow-none print:border-none print:p-0">
+        {/* PRINTABLE / EXPORTABLE DOSSIER CONTAINER */}
+        <div ref={dossierRef} className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200 shadow-sm space-y-8 print:shadow-none print:border-none print:p-0">
           {/* HEADER DOSSIER BANNER */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b pb-6">
             <div>
@@ -110,10 +177,10 @@ export default function ReportPage() {
                 National Micro-Enterprise Evaluation Engine · Concessional Credit Appraisal Framework
               </p>
             </div>
-            <div className="text-left sm:text-right text-xs text-gray-500 space-y-1">
-              <div><strong>Generated Date:</strong> {data.date}</div>
-              <div><strong>Target Catchment:</strong> {data.location}</div>
-              <div><strong>Evaluation Standard:</strong> Hack-A-Throne P11 Metric</div>
+            <div className="text-left sm:text-right text-xs text-gray-600 space-y-1">
+              <div><strong>{t('report.candidate')}:</strong> <span className="font-bold text-emerald-800">{data.entrepreneur}</span></div>
+              <div><strong>{t('report.date')}:</strong> {data.date}</div>
+              <div><strong>{t('report.cluster')}:</strong> {data.location}</div>
             </div>
           </div>
 

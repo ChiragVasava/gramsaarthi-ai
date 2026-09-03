@@ -16,8 +16,10 @@ import {
   ChevronRight,
   Bot
 } from 'lucide-react'
+import { useLanguage } from '@/lib/language-context'
 
 export default function DashboardPage() {
+  const { t } = useLanguage()
   const [profile, setProfile] = useState({
     business: 'Dairy Unit Expansion',
     category: 'Dairy',
@@ -43,7 +45,7 @@ export default function DashboardPage() {
           ...prev,
           business: `${parsed.category} Enterprise`,
           category: parsed.category || prev.category,
-          location: `${parsed.village ? parsed.village + ', ' : ''}${parsed.district || 'Vadodara'}, ${parsed.state || 'Gujarat'}`,
+          location: `${parsed.village ? parsed.village + ', ' : ''}${parsed.block ? parsed.block + ', ' : ''}${parsed.district || 'Vadodara'}, ${parsed.state || 'Gujarat'}`,
           margin: parsed.marginCapital || prev.margin,
           projectCost: parsed.projectCost || prev.projectCost,
           loan: parsed.loanAmount || prev.loan,
@@ -67,10 +69,10 @@ export default function DashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-emerald-800 to-emerald-950 text-white p-6 sm:p-8 rounded-3xl shadow-xl shadow-emerald-950/10">
           <div>
             <span className="bg-emerald-700/60 border border-emerald-500/30 text-emerald-200 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider inline-block mb-3">
-              Active Case Study · Prototype
+              {t('dash.badge')}
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Rural Enterprise Advisory Desk
+              {t('dash.title')}
             </h1>
             <p className="text-emerald-200 text-sm mt-1 max-w-xl leading-relaxed">
               Evaluating hyper-local market feasibility, consumer density, and concessional debt-structuring for <strong>{profile.business}</strong> in {profile.location}.
@@ -81,13 +83,13 @@ export default function DashboardPage() {
               href="/wizard"
               className="bg-white hover:bg-emerald-50 text-emerald-900 text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow transition text-center flex items-center justify-center gap-1.5"
             >
-              <Sparkles className="w-4 h-4 text-emerald-700" /> New Analysis
+              <Sparkles className="w-4 h-4 text-emerald-700" /> {t('dash.newAnalysis')}
             </Link>
             <Link
               href="/report"
               className="bg-emerald-700/80 hover:bg-emerald-600 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl border border-emerald-500/40 transition text-center"
             >
-              View Full Report
+              {t('dash.viewReport')}
             </Link>
           </div>
         </div>
@@ -97,8 +99,8 @@ export default function DashboardPage() {
           {/* FEASIBILITY SCORE */}
           <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Feasibility Score</span>
-              <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">Indicative</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('dash.score')}</span>
+              <span className="p-1.5 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">{t('common.indicative')}</span>
             </div>
             <div className="my-3 flex items-baseline gap-2">
               <span className="text-4xl font-extrabold text-emerald-700">{profile.score}</span>
@@ -106,19 +108,19 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-1.5 text-xs text-emerald-800 bg-emerald-50 py-1.5 px-2.5 rounded-xl font-medium">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-              <span>High viability in {profile.category} sector</span>
+              <span>{t('dash.highFeasibility')} in {profile.category}</span>
             </div>
           </div>
 
           {/* PROJECT COST */}
           <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Project Cost</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('dash.capital')}</span>
               <span className="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md">Margin / 10%</span>
             </div>
             <div className="my-3">
               <span className="text-3xl font-extrabold text-gray-900">₹{profile.projectCost.toLocaleString('en-IN')}</span>
-              <p className="text-xs text-gray-500 mt-0.5">Own contribution: ₹{profile.margin.toLocaleString('en-IN')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t('dash.marginReq')}: ₹{profile.margin.toLocaleString('en-IN')}</p>
             </div>
             <div className="text-xs text-gray-500 border-t pt-2">
               Capital efficiency factor: <strong>10.0x</strong>
@@ -128,7 +130,7 @@ export default function DashboardPage() {
           {/* LOAN STRUCTURING */}
           <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Estimated Loan</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('dash.loan')}</span>
               <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">90% Coverage</span>
             </div>
             <div className="my-3">
