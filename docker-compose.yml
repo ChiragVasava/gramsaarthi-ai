@@ -1,0 +1,17 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gramsaarthi-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/prisma/dev.db
+      - NEXTAUTH_SECRET=gramsaarthi-ai-hackathon-2026-secret
+      - NEXTAUTH_URL=https://aws.chiragvasava.me
+    volumes:
+      # Mount SQLite directory to host disk for data persistence across container restarts
+      - ./data:/app/prisma
