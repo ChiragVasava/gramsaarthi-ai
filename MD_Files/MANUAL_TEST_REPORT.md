@@ -67,9 +67,10 @@ Follow these exact steps to test and experience the entire platform yourself:
 
 ### Step 4: Examine the Feasibility Report (`/report`)
 - Observe your **Feasibility Score** (e.g., `78` or `84` / 100).
+- Verify that your **registered entrepreneur name** is personalized at the top right of the dossier.
 - Review the **Statutory Financial Structuring** table (Margin, Project Cost, Concessional Loan, EMI).
 - Read the **SWOT Matrix** (Strengths, Weaknesses, Opportunities, Threats) and local pricing guidance.
-- Click **"Download / Print PDF"** to trigger the print dialog for an institutional loan dossier.
+- Click **"Download Official PDF"** — notice the live spinner (*"Generating PDF..."*) and the immediate client-side `.pdf` download directly to your downloads folder without triggering any browser print dialog.
 
 ### Step 5: Test the Concessional Financial Calculator (`/calculator`)
 1. Click **Financial Calculator** in the left sidebar.
@@ -77,18 +78,18 @@ Follow these exact steps to test and experience the entire platform yourself:
 3. Now click the **₹100k** preset. Notice it automatically switches to **Term Loan Scheme (8.0% p.a., 7 Years, 6 Months Grace)**.
 4. Scroll down to inspect the **Quarterly Amortization Table** reflecting the moratorium period.
 
-### Step 6: Test Spatial Catchment & Competitor Map (`/map`)
+### Step 6: Test Dynamic Spatial Catchment & Competitor Map (`/map`)
 1. Click **Market & Competitor Map** in the sidebar.
-2. Observe the concentric 5 km and 10 km catchment radar rings.
-3. Click filter pills (**Dairy**, **Offtake**, **Mandi**) at the top-right to inspect local points of interest.
+2. Verify that the **Center node and header** dynamically display the exact village, block, and district you entered in Step 1 (e.g., `Dediapada, Rajpipla, Narmada`).
+3. Observe that surrounding competitors and mandi hubs dynamically reflect the business type you selected (e.g. Grain mandis and wholesale hubs for Retail/Food Processing vs. milk collection centers for Dairy).
+4. Click filter pills (**All**, **Dairy/Retail**, **Offtake**, **Mandi**) at the top-right to inspect local points of interest.
 
 ### Step 7: Chat with the Multilingual AI Business Advisor (`/chat`)
 1. Click **AI Business Advisor** in the sidebar.
-2. Switch language between **EN**, **HI** (Hindi), and **GU** (Gujarati).
-3. Click one of the quick prompt pills or ask:
-   - *"What is the best pricing for value-added Ghee vs raw milk?"*
-   - *"How should I manage fodder costs during summer months?"*
-4. Notice how the response is contextualized to your active business and location!
+2. Notice the advisor greets you personally by name: *"Namaste [Your Name]!"* with your active business details.
+3. Switch language between **EN**, **HI** (Hindi), and **GU** (Gujarati) to observe real-time translation of UI and prompt templates.
+4. Ask a business planning question: *"What is the best pricing for value-added Ghee vs raw milk?"*
+5. **Test Strict Domain Guardrails:** Try asking an off-topic question like *"Write code in Python to reverse a string"*. Observe that the advisor politely declines and guides you back to your rural enterprise and government loan schemes!
 
 ### Step 8: Verify Saved Dossiers (`/reports`)
 1. Click **Saved Reports** in the sidebar.
