@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import AppShell from '@/components/layout/AppShell'
 import Link from 'next/link'
 import { 
@@ -12,25 +12,46 @@ import {
   ArrowRight, 
   Layers, 
   FileSpreadsheet,
-  AlertCircle
+  AlertCircle,
+  Sliders,
+  Sparkles,
+  Info
 } from 'lucide-react'
 import { 
   calculateFinancials, 
   generateRepaymentSchedule, 
-  calculateWorkingCapital 
+  calculateWorkingCapital,
+  MARGIN_CONFIG,
+  ApplicantCategory
 } from '@/lib/financial-engine'
 import { useLanguage } from '@/lib/language-context'
 
 export default function CalculatorPage() {
   const { t } = useLanguage()
   const [margin, setMargin] = useState<number>(100000)
-  const [category, setCategory] = useState<string>('Dairy')
+  const [enterpriseCategory, setEnterpriseCategory] = useState<string>('Dairy')
+  const [applicantCategory, setApplicantCategory] = useState<string>('general')
+  const [enableOverride, setEnableOverride] = useState<boolean>(false)
+  const [customMarginPercent, setCustomMarginPercent] = useState<number>(15)
+  const [interestWaived, setInterestWaived] = useState<boolean>(false)
 
-  const fin = calculateFinancials(margin)
+  const fin = calculateFinancials(margin, {
+    category: applicantCategory,
+    userOverridePercent: enableOverride ? customMarginPercent / 100 : undefined,
+    interestWaivedOverride: interestWaived,
+  })
+
   const schedule = fin.isValid
-    ? generateRepaymentSchedule(fin.loanAmount, fin.interestRate, fin.tenureYears, fin.moratoriumMonths)
+    ? generateRepaymentSchedule(
+        fin.loanAmount,
+        fin.interestRate,
+        fin.tenureYears,
+        fin.moratoriumMonths,
+        fin.interestWaivedDuringMoratorium
+      )
     : []
-  const wc = calculateWorkingCapital(fin.projectCost, category)
+
+  const wc = calculateWorkingCapital(fin.projectCost, enterpriseCategory)
 
   return (
     <AppShell>
@@ -48,19 +69,20 @@ export default function CalculatorPage() {
               {t('calc.subtitle')}
             </p>
           </div>
-          <div className="text-xs text-gray-400 bg-gray-50 p-2.5 rounded-xl border font-mono">
-            P = Margin ÷ 10% | L = P × 90%
+          <div className="text-xs text-emerald-800 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200 font-mono">
+            P = Margin ÷ {Math.round(fin.marginPercent * 100)}% | L = P × {fin.fundingPercent}%
           </div>
         </div>
 
         {/* INPUT & PRIMARY SUMMARY */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* MARGIN INPUT CARD */}
+          {/* CONFIGURATION & MARGIN INPUT CARD */}
           <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-5">
             <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
               <Coins className="w-5 h-5 text-emerald-600" /> {t('calc.equityHeading')}
             </h3>
 
+            {/* MARGIN INPUT */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                 {t('calc.availableContrib')}
@@ -81,7 +103,7 @@ export default function CalculatorPage() {
 
             {/* PRESET CHIPS */}
             <div className="flex flex-wrap gap-2">
-              {[12000, 14000, 50000, 100000, 250000, 500000].map((amt) => (
+              {[7000, 14000, 50000, 100000, 250000, 500000].map((amt) => (
                 <button
                   type="button"
                   key={amt}
@@ -97,13 +119,105 @@ export default function CalculatorPage() {
               ))}
             </div>
 
+            {/* APPLICANT CATEGORY (Bug 1 Fix) */}
+            <div className="pt-2 border-t border-gray-100">
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                <span>Applicant Social Category</span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                  Floor: {applicantCategory === 'general' ? '10%' : '5%'} Margin
+                </span>
+              </label>
+              <select
+                value={applicantCategory}
+                onChange={(e) => setApplicantCategory(e.target.value)}
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white"
+              >
+                <option value="general">General Category (10% Equity Floor)</option>
+                <option value="special">Special Category (5% Equity Floor)</option>
+                <option value="sc_st">SC / ST Beneficiary (5% Equity Floor)</option>
+                <option value="women">Women Entrepreneur (5% Equity Floor)</option>
+                <option value="obc">OBC Beneficiary (5% Equity Floor)</option>
+                <option value="minority">Minority Community (5% Equity Floor)</option>
+                <option value="differently_abled">Differently-Abled (PwD) (5% Equity Floor)</option>
+              </select>
+            </div>
+
+            {/* VOLUNTARY USER MARGIN OVERRIDE (Bug 1 Fix) */}
+            <div className="bg-emerald-50/50 p-3.5 rounded-2xl border border-emerald-100 space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enableOverride}
+                  onChange={(e) => setEnableOverride(e.target.checked)}
+                  className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 w-4 h-4"
+                />
+                <span className="text-xs font-bold text-gray-800">
+                  Voluntarily Contribute Higher Margin %
+                </span>
+              </label>
+              {enableOverride && (
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-xs text-gray-600">
+                    <span>Contribution Rate:</span>
+                    <strong className="text-emerald-800 font-bold">{customMarginPercent}%</strong>
+                  </div>
+                  <input
+                    type="range"
+                    min={applicantCategory === 'general' ? 10 : 5}
+                    max={40}
+                    step={1}
+                    value={customMarginPercent}
+                    onChange={(e) => setCustomMarginPercent(Number(e.target.value))}
+                    className="w-full accent-emerald-600 cursor-pointer"
+                  />
+                  <p className="text-[10px] text-gray-500">
+                    Contributing above the {applicantCategory === 'general' ? '10%' : '5%'} floor lowers your total loan liability and monthly EMI.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* MORATORIUM INTEREST POLICY TOGGLE (Bug 2 Fix) */}
+            <div className="pt-2 border-t border-gray-100">
+              <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Moratorium Interest Policy
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setInterestWaived(false)}
+                  className={`p-2.5 rounded-xl border text-left text-xs transition ${
+                    !interestWaived
+                      ? 'bg-emerald-50 border-emerald-600 text-emerald-950 font-bold'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="font-bold">Repayment Holiday</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">Interest Capitalized (Standard)</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInterestWaived(true)}
+                  className={`p-2.5 rounded-xl border text-left text-xs transition ${
+                    interestWaived
+                      ? 'bg-emerald-50 border-emerald-600 text-emerald-950 font-bold'
+                      : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="font-bold">Interest Waiver</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">Moratorium Interest Waived</div>
+                </button>
+              </div>
+            </div>
+
+            {/* ENTERPRISE DOMAIN */}
             <div>
               <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                 {t('calc.domainLabel')}
               </label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={enterpriseCategory}
+                onChange={(e) => setEnterpriseCategory(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white"
               >
                 <option value="Dairy">Dairy & Livestock</option>
@@ -114,9 +228,10 @@ export default function CalculatorPage() {
               </select>
             </div>
 
+            {/* THRESHOLD ROUTING NOTICE */}
             <div className="bg-amber-50 p-3.5 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-1">
               <div className="font-bold flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5 text-amber-700" /> Threshold Routing Boundary:
+                <AlertCircle className="w-3.5 h-3.5 text-amber-700" /> Statutory Scheme Boundary:
               </div>
               <p className="leading-relaxed">
                 {t('calc.thresholdAlert')}
@@ -132,7 +247,7 @@ export default function CalculatorPage() {
                   {t('calc.schemeQualification')}
                 </span>
                 <span className="text-xs font-mono text-emerald-300">
-                  {fin.schemeCode === 'micro' ? 'PROJECT COST ≤ ₹1.4L' : 'PROJECT COST &gt; ₹1.4L'}
+                  {fin.schemeCode === 'micro' ? 'PROJECT COST ≤ ₹1.4L' : 'PROJECT COST > ₹1.4L'}
                 </span>
               </div>
 
@@ -142,8 +257,8 @@ export default function CalculatorPage() {
                 </h2>
                 <p className="text-xs text-emerald-200 mt-1 max-w-md">
                   {fin.schemeCode === 'micro'
-                    ? 'Designed for household-level micro-units. 3-year term with 3 months interest moratorium.'
-                    : 'Targeted at commercial rural enterprises with scale. 7-year term with 6 months interest moratorium.'}
+                    ? `Designed for micro-units. 3-year term with 3 months ${fin.interestWaivedDuringMoratorium ? 'interest moratorium (waived)' : 'principal moratorium (interest capitalized)'}.`
+                    : `Targeted at rural commercial scale. 7-year term with 6 months ${fin.interestWaivedDuringMoratorium ? 'interest moratorium (waived)' : 'principal moratorium (interest capitalized)'}.`}
                 </p>
               </div>
 
@@ -164,6 +279,21 @@ export default function CalculatorPage() {
                   <span className="text-[11px] text-emerald-300 uppercase">{t('calc.monthlyEmi')}</span>
                   <p className="text-xl sm:text-2xl font-extrabold mt-0.5">₹{fin.emiMonthly.toLocaleString('en-IN')}</p>
                 </div>
+              </div>
+
+              {/* MORATORIUM POLICY BADGE */}
+              <div className="mt-4 p-3 bg-emerald-900/50 rounded-2xl border border-emerald-700/60 flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-emerald-300 font-semibold">Moratorium Type: </span>
+                  <span className="text-white font-bold">
+                    {fin.interestWaivedDuringMoratorium
+                      ? 'Interest Moratorium (Interest Waived)'
+                      : 'Principal Moratorium (Interest Capitalized into Principal)'}
+                  </span>
+                </div>
+                <span className="text-[10px] bg-emerald-700/70 text-emerald-200 px-2 py-0.5 rounded">
+                  {fin.moratoriumMonths} Mo. Grace
+                </span>
               </div>
             </div>
 
@@ -259,7 +389,7 @@ export default function CalculatorPage() {
           </div>
 
           <p className="text-[11px] text-gray-400 italic pt-2">
-            * Displaying initial 8 quarters. Exact schedule finalized upon sanction by State Channelizing Agency (SCA) or participating commercial bank.
+            * Displaying initial 8 quarters. Schedule reflects {fin.interestWaivedDuringMoratorium ? 'interest waiver' : 'capitalized interest during repayment holiday'}. Exact schedule finalized upon sanction by State Channelizing Agency (SCA).
           </p>
         </div>
       </div>

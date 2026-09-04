@@ -29,6 +29,7 @@ export default function WizardPage() {
     block: 'Savli',
     village: 'Tarsali',
     category: 'Dairy',
+    applicantCategory: 'general',
     marginCapital: 100000,
     experience: 'some',
     targetAudience: 'Local co-ops & retail consumer direct',
@@ -57,18 +58,21 @@ export default function WizardPage() {
   const handleGenerate = async () => {
     setLoading(true)
 
-    // Run deterministic financial engine
-    const fin = calculateFinancials(formData.marginCapital)
+    // Run deterministic financial engine with applicant category
+    const fin = calculateFinancials(formData.marginCapital, { category: formData.applicantCategory })
 
     // Construct unified analysis state
     const analysisPayload = {
       ...formData,
       projectCost: fin.projectCost,
       loanAmount: fin.loanAmount,
+      marginPercent: fin.marginPercent,
+      fundingPercent: fin.fundingPercent,
       scheme: fin.schemeCode,
       interestRate: fin.interestRate,
       tenureYears: fin.tenureYears,
       moratoriumMonths: fin.moratoriumMonths,
+      interestWaivedDuringMoratorium: fin.interestWaivedDuringMoratorium,
       emiMonthly: fin.emiMonthly,
       feasibilityScore: formData.category === 'Dairy' ? 84 : 78,
       status: 'completed',
@@ -255,6 +259,29 @@ export default function WizardPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                 <div className="space-y-4">
+                  {/* APPLICANT CATEGORY SELECTOR */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1 flex items-center justify-between">
+                      <span>Applicant Social Category</span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                        Floor: {formData.applicantCategory === 'general' ? '10%' : '5%'} Margin
+                      </span>
+                    </label>
+                    <select
+                      value={formData.applicantCategory}
+                      onChange={(e) => setFormData({ ...formData, applicantCategory: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 bg-white"
+                    >
+                      <option value="general">General Category (10% Equity Floor)</option>
+                      <option value="special">Special Category (5% Equity Floor)</option>
+                      <option value="sc_st">SC / ST Beneficiary (5% Equity Floor)</option>
+                      <option value="women">Women Entrepreneur (5% Equity Floor)</option>
+                      <option value="obc">OBC Beneficiary (5% Equity Floor)</option>
+                      <option value="minority">Minority Community (5% Equity Floor)</option>
+                      <option value="differently_abled">Differently-Abled (PwD) (5% Equity Floor)</option>
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                       Own Savings / Family Contribution (₹)
@@ -275,7 +302,7 @@ export default function WizardPage() {
 
                   {/* QUICK PRESETS */}
                   <div className="flex flex-wrap gap-2">
-                    {[15000, 50000, 100000, 250000, 500000].map((amt) => (
+                    {[7000, 14000, 50000, 100000, 250000, 500000].map((amt) => (
                       <button
                         type="button"
                         key={amt}
@@ -291,14 +318,19 @@ export default function WizardPage() {
                     ))}
                   </div>
 
-                  <p className="text-xs text-gray-500 leading-relaxed">
-                    This amount represents your 10% equity commitment under concessional credit guidelines.
-                  </p>
+                  {(() => {
+                    const finPreview = calculateFinancials(formData.marginCapital, { category: formData.applicantCategory })
+                    return (
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        This amount represents your {Math.round(finPreview.marginPercent * 100)}% equity commitment under concessional credit guidelines.
+                      </p>
+                    )
+                  })()}
                 </div>
 
                 {/* DYNAMIC FINANCIAL ENGINE SUMMARY CARD */}
                 {(() => {
-                  const fin = calculateFinancials(formData.marginCapital)
+                  const fin = calculateFinancials(formData.marginCapital, { category: formData.applicantCategory })
                   return (
                     <div className="bg-gradient-to-br from-emerald-900 to-emerald-950 text-white p-6 rounded-3xl space-y-4 shadow-lg">
                       <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest bg-emerald-800/60 px-2.5 py-1 rounded-full">
@@ -312,7 +344,7 @@ export default function WizardPage() {
 
                       <div className="grid grid-cols-2 gap-3 pt-2 border-t border-emerald-800/80 text-xs">
                         <div>
-                          <span className="text-emerald-300">Loan (90%):</span>
+                          <span className="text-emerald-300">Loan ({fin.fundingPercent}%):</span>
                           <p className="font-bold text-sm">₹{fin.loanAmount.toLocaleString('en-IN')}</p>
                         </div>
                         <div>
@@ -330,7 +362,7 @@ export default function WizardPage() {
                       </div>
 
                       <div className="text-[11px] text-emerald-200 bg-emerald-800/40 p-2.5 rounded-xl border border-emerald-700/50">
-                        Moratorium period: <strong>{fin.moratoriumMonths} months grace</strong> included.
+                        Moratorium period: <strong>{fin.moratoriumMonths} months {fin.interestWaivedDuringMoratorium ? 'interest grace (waived)' : 'principal grace (interest capitalized)'}</strong> included.
                       </div>
                     </div>
                   )
