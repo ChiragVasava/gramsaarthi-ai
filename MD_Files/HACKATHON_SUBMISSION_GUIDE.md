@@ -36,25 +36,35 @@ When filling out the hackathon submission portal / Google Form, use these verifi
 
 ---
 
-## 📊 2. Presentation Deck Alignment (12-Slide Master)
+## 📊 2. Official 6-Slide Presentation Deck Alignment
 
-The presentation deck files are located directly in the `MD_Files/` directory:
-- **PowerPoint Deck:** [`MD_Files/GramSaarthi_AI_Hackathon_Presentation.pptx`](./GramSaarthi_AI_Hackathon_Presentation.pptx)
-- **High-Resolution PDF:** [`MD_Files/GramSaarthi_AI_Hackathon_Presentation.pdf`](./GramSaarthi_AI_Hackathon_Presentation.pdf)
+The official presentation deck files strictly adhere to the 6-slide limit for the Elimination Round:
+- **PowerPoint Deck:** [`MD_Files/GramSaarthi_AI_Hackathon_Presentation.pptx`](./GramSaarthi_AI_Hackathon_Presentation.pptx) *(and in `Elimination Submission/`)*
+- **High-Resolution PDF (6 Pages):** [`MD_Files/GramSaarthi_AI_Hackathon_Presentation.pdf`](./GramSaarthi_AI_Hackathon_Presentation.pdf) *(and in `Elimination Submission/`)*
 
-### Slide Structure Overview
-1. **Slide 1: Title & Vision** — Project introduction, problem statement P11, and team credits.
-2. **Slide 2: The Rural Entrepreneurship Crisis** — High failure rate, credit linkage failure, spatial illiteracy.
-3. **Slide 3: Statutory Concessional Credit Framework** — 10% margin rule, 90% loan, scheme qualification.
-4. **Slide 4: GramSaarthi AI Solution Architecture** — Presentation, State Store, Calculation, and Intelligence tiers.
-5. **Slide 5: Guided Feasibility Wizard** — 4-step intake, 8 trade categories, real-time dynamic scoring.
-6. **Slide 6: Dynamic Multi-Report & Portfolio Management** — Multi-enterprise switching and aggregated capital.
-7. **Slide 7: Spatial Catchment Intelligence (5 km & 10 km)** — Geofenced catchment, trade-adaptive POIs.
-8. **Slide 8: Concessional Financial Calculator & Moratorium** — Grace period modeling, quarterly amortization.
-9. **Slide 9: Trilingual Guardrailed AI Advisor (ArthaBot)** — EN/HI/GU localization, strict domain boundaries.
-10. **Slide 10: 1-Click Client-Side PDF Engine** — Canvas2D color proxy architecture and instant export.
-11. **Slide 11: Production Cloud Architecture & DevOps** — AWS EC2, Docker, Caddy auto-TLS, and Terraform IaC.
-12. **Slide 12: Business Impact, Scalability & Roadmap** — Bank integration, e-NAM mandi feeds, offline PWA.
+### Slide-by-Slide Structure (Official MSU Hack-A-Throne 2026 Template)
+1. **Slide 1: Basic Details of the Team and Problem Statement**
+   - Problem Statement Number: P11
+   - Problem Statement Title: AI-Driven Hyper-Local Business Advisory and Financial Structuring Assistant for Rural Micro-Entrepreneurs
+   - Project Title: GramSaarthi AI (ग्रामसारथी)
+   - Team Leader: Chirag Vasava
+   - Live Deployment Links: AWS EC2 (`https://gramsaarthi-ai.chiragvasava.me`), Vercel Edge (`https://gramsaarthi.chiragvasava.me`), and GitHub.
+2. **Slide 2: Idea/Approach Details (Prototype & Technology Stack)**
+   - Left: Core Problem Addressed (63M+ MSMEs, 40%+ failure rate, 78% credit rejection) + GramSaarthi AI Dual-Engine Solution + Multi-Enterprise Portfolio + 1-Click PDF Engine.
+   - Right: Technology Stack (Next.js 16 App Router, TypeScript 5, Tailwind CSS, Prisma/SQLite, Dual-Cloud AWS EC2 + Vercel, Terraform IaC, Gemini API with strict guardrails, Canvas2D PDF proxy).
+3. **Slide 3: Idea/Approach Details (Use Cases & Dependencies)**
+   - Left: 4 Verified Use Cases: (1) Dairy Enterprise (₹10L project, ₹9L Term Loan @ 8.0%), (2) Food Processing & Flour (₹1.20L project, ₹1.08L Micro Finance @ 6.5%), (3) Multi-Enterprise Portfolio Management, (4) Trilingual Voice-First Advisory in Hindi & Gujarati.
+   - Right: Dependencies: Node.js 20, Next.js 16, Prisma 5.22, AWS EC2 Ubuntu 24.04, Docker, Caddy auto-TLS, Terraform, Google Gemini API, Web Speech API.
+4. **Slide 4: Idea/Approach Details (Uniqueness of your Idea & Future Scope/Impact)**
+   - Left: Uniqueness: Decoupled deterministic math (zero hallucinations), automated scheme routing, 5 & 10 km concentric catchment, multi-enterprise portfolio switching, 1-click zero-crash PDF export, trilingual AI with strict domain guardrails, dual-cloud production.
+   - Right: Impact & Roadmap: Reduces 40%+ early failure rate, cuts appraisal time from 4–6 weeks to <90s, unlocks statutory credit. Roadmap: SCA & JanSamarth portal API, e-NAM mandi feeds, offline edge AI, SHG multi-tenant clustering.
+5. **Slide 5: Architecture Diagram**
+   - Official Template Header: *Architecture Diagram*.
+   - High-resolution clean architectural diagram embedding the complete dual-cloud, client, reactive state store, and deterministic engine topology.
+6. **Slide 6: Additional Details (Keep the content limited to this slide only)**
+   - Left: Live Prototype & Verification Highlights (Dual-cloud HTTP/2 200 OK endpoints, 1-click demo evaluation mode `demo@gramsaarthi.ai`, 10 active live routes, zero hardcoded data, 1-click PDF download).
+   - Right: Alignment with P11 Problem Statement & Screening (Strict P11 compliance, mathematical auditability, comprehensive documentation suite in `MD_Files/`, clean GitHub repository, 3-minute video presentation script ready).
+
 
 ---
 
