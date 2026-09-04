@@ -184,22 +184,32 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
 ---
 
+### 🚀 Live Deployment Endpoints
+- **AWS Cloud Production:** [https://gramsaarthi-ai.chiragvasava.me](https://gramsaarthi-ai.chiragvasava.me) *(AWS EC2 + Docker + Caddy Reverse Proxy + Auto-TLS)*
+- **Vercel Serverless Edge:** [https://gramsaarthi.chiragvasava.me](https://gramsaarthi.chiragvasava.me) *(Vercel Edge Network)*
+- **GitHub Repository:** [https://github.com/ChiragVasava/gramsaarthi-ai](https://github.com/ChiragVasava/gramsaarthi-ai)
+
+---
+
 ## 📚 Complete Documentation Library (`MD_Files/`)
 
 All technical specifications, verification reports, and presentation guides are indexed in the [`MD_Files/`](./MD_Files/INDEX.md) folder:
 
 | Document | Purpose |
 | :--- | :--- |
+| 📊 [**Master Presentation Deck (PPTX)**](./MD_Files/GramSaarthi_AI_Hackathon_Presentation.pptx) | 12-slide master pitch deck formatted in 16:9 widescreen for hackathon pitch & video demo. |
+| 📑 [**Master Presentation Deck (PDF)**](./MD_Files/GramSaarthi_AI_Hackathon_Presentation.pdf) | High-resolution, vector-accurate PDF export of the presentation slides for portal submission. |
 | 🏗️ [**Architecture Blueprint**](./MD_Files/ARCHITECTURE.md) | Multi-tier architectural specifications, data flow, and mathematical debt models. |
 | ✨ [**Features Specification**](./MD_Files/FEATURES.md) | Full breakdown of Module 1 (Feasibility), Module 2 (Financial Engine), dynamic map, and PDF downloads. |
-| 🎬 [**3-Minute Demo Script**](./MD_Files/DEMO_SCRIPT.md) | Rehearsed presenter script for the official video submission. |
-| 🧪 [**Manual Testing Report & Guide**](./MD_Files/MANUAL_TEST_REPORT.md) | Verified test logs, data persistence mechanics, and step-by-step testing instructions. |
+| 🎬 [**3-Minute Demo Script**](./MD_Files/DEMO_SCRIPT.md) | Rehearsed presenter script with visual cues for the official video submission. |
+| 🧪 [**Manual Testing Report & Guide**](./MD_Files/MANUAL_TEST_REPORT.md) | Verified test logs, multi-report synchronization, Canvas2D PDF proxy, and step-by-step test guide. |
 | ⚖️ [**Limitations & Scalability Roadmap**](./MD_Files/LIMITATIONS_AND_ROADMAP.md) | Statutory disclaimers, prototype boundaries, and future integration phases. |
 | 🛠️ [**Tech Stack Deep Dive**](./MD_Files/TECH_STACK.md) | Architectural trade-offs and rationale behind deterministic vs. LLM separation. |
 | 🚀 [**Deployment Case Study**](./MD_Files/DEPLOYMENT_CASE_STUDY.md) | Dual cloud deployment (Vercel + AWS), Docker multi-stage build, and production troubleshooting logs. |
 | ☁️ [**Terraform IaC Master Guide**](./MD_Files/TERRAFORM.md) | Comprehensive master guide for Terraform IaC, HCL code breakdown, cloud-init scripts, and AI teaching prompt. |
 | 📝 [**Terraform Deployment CLI Log**](./MD_Files/terraform-deployment-log.md) | Live raw execution transcript of all CLI commands, outputs, and AWS resource states. |
 | 🏆 [**Hackathon Submission Guide**](./MD_Files/HACKATHON_SUBMISSION_GUIDE.md) | Form fields, slide-by-slide PPT guide, and pre-submission checklist. |
+
 
 ---
 
