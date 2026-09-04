@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import AppShell from '@/components/layout/AppShell'
 import Link from 'next/link'
 import { FileText, Download, ArrowRight, Sparkles, CheckCircle2, Clock } from 'lucide-react'
+import { useLanguage } from '@/lib/language-context'
 
 export default function ReportsIndexPage() {
+  const { t } = useLanguage()
   const [reportsList, setReportsList] = useState<any[]>([])
 
   useEffect(() => {
@@ -63,14 +65,14 @@ export default function ReportsIndexPage() {
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-gray-900">Saved Feasibility Dossiers</h1>
-            <p className="text-xs text-gray-500 mt-1">Access or export pre-compiled candidate appraisals for presentation</p>
+            <h1 className="text-2xl font-extrabold text-gray-900">{t('reports.title')}</h1>
+            <p className="text-xs text-gray-500 mt-1">{t('reports.subtitle')}</p>
           </div>
           <Link
             href="/wizard"
             className="text-xs font-bold bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl transition shadow flex items-center gap-1.5"
           >
-            <Sparkles className="w-4 h-4" /> Run New Appraisal
+            <Sparkles className="w-4 h-4" /> {t('reports.runNew')}
           </Link>
         </div>
 
@@ -82,7 +84,7 @@ export default function ReportsIndexPage() {
                   <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
                     r.status === 'Active Custom' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-700'
                   }`}>
-                    {r.id}
+                    {r.status === 'Active Custom' ? t('reports.activeCustom') : r.id}
                   </span>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full">
                     Score: {r.score}/100
@@ -98,21 +100,22 @@ export default function ReportsIndexPage() {
                     <p className="font-semibold text-gray-800">{r.scheme}</p>
                   </div>
                   <div>
-                    <span className="text-gray-400">Project Size:</span>
+                    <span className="text-gray-400">Project Sizing:</span>
                     <p className="font-semibold text-gray-800">{r.projectCost}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-2 border-t flex items-center justify-between">
-                <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> {r.date}
-                </span>
+              <div className="pt-3 border-t flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>{r.date}</span>
+                </div>
                 <Link
                   href="/report"
-                  className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs py-2 px-4 rounded-xl transition"
+                  className="font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl transition"
                 >
-                  Examine Dossier
+                  {t('reports.viewDossier')} <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>

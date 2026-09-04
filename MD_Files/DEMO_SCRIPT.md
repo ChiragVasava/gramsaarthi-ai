@@ -31,12 +31,16 @@
 ### [1:55 - 2:35] AI Business Feasibility Dossier & Multilingual Advisor
 - **Visual**: Full Feasibility Report (`/report`) and AI Chat (`/chat`).
 - **Narrator**:
-  > *"GramSaarthi compiles this into an institutional-grade Feasibility Dossier—complete with an 84/100 viability score, SWOT matrix, and seasonal risk warnings. The entrepreneur can consult the **Multilingual AI Advisor** in English, Hindi, or Gujarati, or use voice input to ask operational questions like how to protect margins during hot summer fodder shortages."*
-- **Action**: Ask the AI chatbot: *"What is the best pricing for value-added Ghee vs raw milk?"* and display instant contextual advice.
+  > *"GramSaarthi compiles this into an institutional-grade Feasibility Dossier—complete with an 84/100 viability score, SWOT matrix, and seasonal risk warnings. Notice that the entrepreneur can download an official PDF with a single click—no printing setup required. The candidate can also consult the **Multilingual AI Advisor** in English, Hindi, or Gujarati. The advisor greets them by their personal name and is strictly guarded to answer only rural enterprise questions—ensuring safe, reliable institutional advisory."*
+- **Action**: 
+  1. Click **"Download Official PDF"** on `/report` to show direct client-side PDF generation.
+  2. Switch language to **Hindi (HI)** or **Gujarati (GU)** using the top language switcher to demonstrate live multilingual localization.
+  3. Open AI Chat (`/chat`), ask *"What is the best pricing for value-added Ghee vs raw milk?"* to show actionable rural business advice.
+  4. Ask an off-topic question like *"Write code in Python to reverse a string"* to show the polite AI domain guardrail in action!
 
 ---
 
 ### [2:35 - 3:00] Conclusion & Impact
-- **Visual**: Dashboard (`/dashboard`) or Report PDF Export view (`/report`).
+- **Visual**: Dashboard (`/dashboard`) showing live dual-cloud deployment (Vercel + AWS EC2 via Terraform).
 - **Narrator**:
-  > *"GramSaarthi bridges the gap between rural ambition and institutional credit guidelines—democratizing elite business advisory for every village in India. Thank you!"*
+  > *"With dual deployments on Vercel Serverless and AWS EC2 provisioned via Terraform IaC, GramSaarthi bridges the gap between rural ambition and institutional credit guidelines—democratizing elite business advisory for every village in India. Thank you!"*

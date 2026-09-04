@@ -15,6 +15,7 @@ import {
   Languages
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useLanguage, Language } from '@/lib/language-context'
 
 interface ShellProps {
   children: React.ReactNode
@@ -24,7 +25,8 @@ export default function AppShell({ children }: ShellProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [userName, setUserName] = useState('Rajesh Patel')
-  const [lang, setLang] = useState('EN')
+  const [userLocation, setUserLocation] = useState('Vadodara, GJ')
+  const { language, setLanguage, t } = useLanguage()
 
   useEffect(() => {
     const userStr = localStorage.getItem('gs_user')
@@ -32,6 +34,20 @@ export default function AppShell({ children }: ShellProps) {
       try {
         const u = JSON.parse(userStr)
         if (u.name) setUserName(u.name)
+        if (u.location) setUserLocation(u.location)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+
+    const analysisStr = localStorage.getItem('gs_analysis')
+    if (analysisStr) {
+      try {
+        const a = JSON.parse(analysisStr)
+        const locParts = [a.village, a.block, a.district].filter(Boolean)
+        if (locParts.length > 0) {
+          setUserLocation(locParts.join(', '))
+        }
       } catch (e) {
         console.error(e)
       }
@@ -39,12 +55,12 @@ export default function AppShell({ children }: ShellProps) {
   }, [])
 
   const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Feasibility Wizard', href: '/wizard', icon: Sparkles },
-    { name: 'Financial Calculator', href: '/calculator', icon: Calculator },
-    { name: 'Market & Competitor Map', href: '/map', icon: MapPin },
-    { name: 'AI Business Advisor', href: '/chat', icon: Bot },
-    { name: 'Saved Reports', href: '/reports', icon: FileText },
+    { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
+    { name: t('nav.wizard'), href: '/wizard', icon: Sparkles },
+    { name: t('nav.calculator'), href: '/calculator', icon: Calculator },
+    { name: t('nav.map'), href: '/map', icon: MapPin },
+    { name: t('nav.chat'), href: '/chat', icon: Bot },
+    { name: t('nav.reports'), href: '/reports', icon: FileText },
   ]
 
   const handleLogout = () => {
@@ -70,7 +86,7 @@ export default function AppShell({ children }: ShellProps) {
 
           {/* NAV LINKS */}
           <nav className="p-4 space-y-1">
-            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">Main Menu</div>
+            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider px-3 mb-2">{t('nav.mainMenu')}</div>
             {navItems.map((item) => {
               const active = pathname === item.href || (item.href !== '/dashboard' && pathname?.startsWith(item.href))
               const Icon = item.icon
@@ -98,15 +114,15 @@ export default function AppShell({ children }: ShellProps) {
           <div className="flex items-center justify-between bg-gray-50 p-2 rounded-xl border border-gray-100">
             <div className="flex items-center gap-2 text-xs text-gray-600 font-medium">
               <Languages className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Language</span>
+              <span>{t('nav.language')}</span>
             </div>
             <div className="flex gap-1 text-[11px] font-bold">
-              {['EN', 'HI', 'GU'].map((l) => (
+              {(['EN', 'HI', 'GU'] as Language[]).map((l) => (
                 <button
                   key={l}
-                  onClick={() => setLang(l)}
+                  onClick={() => setLanguage(l)}
                   className={`px-1.5 py-0.5 rounded transition ${
-                    lang === l ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:bg-gray-200'
+                    language === l ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:bg-gray-200'
                   }`}
                 >
                   {l}
@@ -118,16 +134,16 @@ export default function AppShell({ children }: ShellProps) {
           <div className="flex items-center justify-between px-2 pt-1">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">
-                {userName.charAt(0)}
+                {userName.charAt(0).toUpperCase()}
               </div>
               <div className="leading-tight overflow-hidden">
                 <p className="text-xs font-semibold text-gray-900 truncate w-24">{userName}</p>
-                <p className="text-[10px] text-gray-500">Vadodara, GJ</p>
+                <p className="text-[10px] text-gray-500 truncate w-24" title={userLocation}>{userLocation}</p>
               </div>
             </div>
             <button
               onClick={handleLogout}
-              title="Logout"
+              title={t('nav.logout')}
               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
             >
               <LogOut className="w-4 h-4" />

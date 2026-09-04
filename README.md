@@ -58,11 +58,20 @@ In India, over **70 million rural micro-entrepreneurs** aspire to build sustaina
 | :--- | :--- |
 | 📋 **Guided 4-Step Intake Wizard** | Streamlined intake for Village/Block coordinates, business trade, own equity, and experience. |
 | 📊 **Executive Feasibility Dossier** | Comprehensive report featuring a 0–100 Feasibility Score, financial breakdown, and SWOT matrix. |
-| 🗺️ **Spatial Catchment & Competitor Map** | Concentric radar visualizer displaying 5 km and 10 km radiuses, competitors, and procurement hubs. |
-| 🤖 **Multilingual AI Business Advisor** | Conversational advisor with native **English (EN)**, **Hindi (HI)**, and **Gujarati (GU)** support. |
+| 🗺️ **Dynamic Spatial Catchment & Competitor Map** | Dynamic radar visualizer adapting center coordinates, 5 km/10 km radiuses, and ecosystem POIs to user's selected village & trade. |
+| 🤖 **Multilingual AI Business Advisor** | Personalized conversational advisor greeting users by name with native **English (EN)**, **Hindi (HI)**, and **Gujarati (GU)** support. |
+| 🛡️ **Inviolable Domain Guardrails** | Strict boundaries rejecting off-topic queries (coding, trivia, homework) to keep focus on rural enterprise advisory. |
+| 📄 **1-Click Direct PDF Dossier Download** | Client-side `.pdf` generation via `jsPDF` & `html2canvas` for immediate dossier downloads without print setup. |
 | 🎙️ **Voice Input Integration** | Web Speech API speech-to-text allowing rural entrepreneurs to speak their queries directly. |
-| 📄 **Statutory PDF Dossier Export** | Formatted printable loan appraisal document ready for submission to banks or SCA officials. |
 | ⚡ **1-Click Instant Demo Mode** | Pre-loaded candidate appraisal (Vadodara & Narmada, Gujarat) for instant presentation testing. |
+| ☁️ **Dual Production Deployments** | Live on **Vercel Serverless Edge** and **AWS EC2 via Terraform IaC** with automated Caddy SSL proxy. |
+
+---
+
+## 🌐 Live Production Deployments
+
+- 🚀 **Vercel Production:** [https://gramsaarthi.chiragvasava.me/](https://gramsaarthi.chiragvasava.me/)
+- ☁️ **AWS EC2 (Terraform IaC):** [https://gramsaarthi-ai.chiragvasava.me/](https://gramsaarthi-ai.chiragvasava.me/)
 
 ---
 
@@ -106,9 +115,12 @@ In India, over **70 million rural micro-entrepreneurs** aspire to build sustaina
 - **Language:** TypeScript 5.0
 - **Styling:** Tailwind CSS 4, PostCSS
 - **Database:** SQLite with Prisma ORM 5.22
+- **PDF Generation:** jsPDF + html2canvas
 - **Icons & UI:** Lucide React
 - **AI Engine:** Google Gemini API integration with autonomous deterministic fallback
 - **Audio / Speech:** Web Speech API for voice recognition
+- **Cloud Infrastructure:** AWS EC2 (`t3.micro`), Elastic IP, Ubuntu 24.04 LTS, HashiCorp Terraform IaC
+- **Web Server & Reverse Proxy:** Caddy v2 (Automated Let's Encrypt TLS-ALPN-01)
 
 ---
 
@@ -153,7 +165,7 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 ## 🧪 Step-by-Step User Testing Guide
 
 ### Option 1: 1-Click Instant Demo
-1. Visit `http://localhost:3000`.
+1. Visit `http://localhost:3000` (or the live links above).
 2. Click **"Try Demo"** in the top navigation bar.
 3. You will be automatically authenticated as candidate `Rajesh Patel` (`demo@gramsaarthi.ai`) and taken to the executive dashboard.
 
@@ -167,8 +179,8 @@ Open **[http://localhost:3000](http://localhost:3000)** in your browser.
    - **Category:** Choose a trade (e.g., *Dairy & Livestock* or *Food Processing & Flour*).
    - **Capital:** Enter your margin capital (e.g., `₹50,000` or `₹1,00,000`). Observe the instant scheme routing on the right.
    - **Review:** Select your experience level and click **Generate Complete AI Report**.
-6. Inspect the generated **Feasibility Dossier** at `/report`.
-7. Explore `/calculator`, `/map`, and `/chat` to test real-time data persistence across routes.
+6. Inspect the generated **Feasibility Dossier** at `/report` and click **Download Official PDF** for instant 1-click download.
+7. Explore `/map` to see your location and trade reflected on the radar map, and `/chat` to speak with the personalized advisor!
 
 ---
 
@@ -179,11 +191,14 @@ All technical specifications, verification reports, and presentation guides are 
 | Document | Purpose |
 | :--- | :--- |
 | 🏗️ [**Architecture Blueprint**](./MD_Files/ARCHITECTURE.md) | Multi-tier architectural specifications, data flow, and mathematical debt models. |
-| ✨ [**Features Specification**](./MD_Files/FEATURES.md) | Full breakdown of Module 1 (Feasibility) and Module 2 (Financial Engine). |
+| ✨ [**Features Specification**](./MD_Files/FEATURES.md) | Full breakdown of Module 1 (Feasibility), Module 2 (Financial Engine), dynamic map, and PDF downloads. |
 | 🎬 [**3-Minute Demo Script**](./MD_Files/DEMO_SCRIPT.md) | Rehearsed presenter script for the official video submission. |
 | 🧪 [**Manual Testing Report & Guide**](./MD_Files/MANUAL_TEST_REPORT.md) | Verified test logs, data persistence mechanics, and step-by-step testing instructions. |
 | ⚖️ [**Limitations & Scalability Roadmap**](./MD_Files/LIMITATIONS_AND_ROADMAP.md) | Statutory disclaimers, prototype boundaries, and future integration phases. |
 | 🛠️ [**Tech Stack Deep Dive**](./MD_Files/TECH_STACK.md) | Architectural trade-offs and rationale behind deterministic vs. LLM separation. |
+| 🚀 [**Deployment Case Study**](./MD_Files/DEPLOYMENT_CASE_STUDY.md) | Dual cloud deployment (Vercel + AWS), Docker multi-stage build, and production troubleshooting logs. |
+| ☁️ [**Terraform IaC Master Guide**](./MD_Files/TERRAFORM.md) | Comprehensive master guide for Terraform IaC, HCL code breakdown, cloud-init scripts, and AI teaching prompt. |
+| 📝 [**Terraform Deployment CLI Log**](./MD_Files/terraform-deployment-log.md) | Live raw execution transcript of all CLI commands, outputs, and AWS resource states. |
 | 🏆 [**Hackathon Submission Guide**](./MD_Files/HACKATHON_SUBMISSION_GUIDE.md) | Form fields, slide-by-slide PPT guide, and pre-submission checklist. |
 
 ---
