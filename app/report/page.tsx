@@ -26,12 +26,15 @@ export default function ReportPage() {
     location: 'Tarsali, Savli Block, Vadodara, Gujarat',
     category: 'Dairy',
     marginCapital: 100000,
+    marginPercent: 0.10,
+    fundingPercent: 90,
     projectCost: 1000000,
     loanAmount: 900000,
     scheme: 'Term Loan Scheme',
     interestRate: 8.0,
     tenureYears: 7,
     moratoriumMonths: 6,
+    interestWaivedDuringMoratorium: false,
     emiMonthly: 14025,
     score: 84,
     date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -47,12 +50,15 @@ export default function ReportPage() {
           category: parsed.category || prev.category,
           location: `${parsed.village ? parsed.village + ', ' : ''}${parsed.block ? parsed.block + ', ' : ''}${parsed.district || 'Vadodara'}, ${parsed.state || 'Gujarat'}`,
           marginCapital: parsed.marginCapital || prev.marginCapital,
+          marginPercent: parsed.marginPercent || (parsed.projectCost && parsed.marginCapital ? parsed.marginCapital / parsed.projectCost : prev.marginPercent),
+          fundingPercent: parsed.fundingPercent || (parsed.projectCost && parsed.loanAmount ? Math.round((parsed.loanAmount / parsed.projectCost) * 100) : prev.fundingPercent),
           projectCost: parsed.projectCost || prev.projectCost,
           loanAmount: parsed.loanAmount || prev.loanAmount,
           scheme: parsed.scheme === 'micro' ? 'Micro Finance Scheme' : 'Term Loan Scheme',
           interestRate: parsed.interestRate || prev.interestRate,
           tenureYears: parsed.tenureYears || prev.tenureYears,
           moratoriumMonths: parsed.moratoriumMonths || prev.moratoriumMonths,
+          interestWaivedDuringMoratorium: parsed.interestWaivedDuringMoratorium !== undefined ? parsed.interestWaivedDuringMoratorium : prev.interestWaivedDuringMoratorium,
           emiMonthly: parsed.emiMonthly || prev.emiMonthly,
           score: parsed.feasibilityScore || prev.score,
         }))
@@ -156,7 +162,7 @@ export default function ReportPage() {
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Own Margin (10%)</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Own Margin ({Math.round(data.marginPercent * 100)}%)</span>
                 <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.marginCapital.toLocaleString('en-IN')}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">Statutory commitment</p>
               </div>
@@ -164,11 +170,11 @@ export default function ReportPage() {
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Feasible Project Cost</span>
                 <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.projectCost.toLocaleString('en-IN')}</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">Margin ÷ 10%</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">Margin ÷ {Math.round(data.marginPercent * 100)}%</p>
               </div>
 
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Loan Principal (90%)</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Loan Principal ({data.fundingPercent}%)</span>
                 <p className="text-base font-extrabold text-emerald-800 mt-0.5">₹{data.loanAmount.toLocaleString('en-IN')}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{data.scheme}</p>
               </div>
@@ -181,7 +187,9 @@ export default function ReportPage() {
             </div>
 
             <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200/60 text-xs text-emerald-950 flex items-center justify-between">
-              <span>Moratorium Provision: <strong>{data.moratoriumMonths} Months Interest Grace Period</strong> prior to principal repayment.</span>
+              <span>
+                Moratorium Provision: <strong>{data.moratoriumMonths} Months {data.interestWaivedDuringMoratorium ? 'Interest Moratorium (Waived)' : 'Principal Moratorium (Interest Capitalized)'}</strong> prior to active amortization.
+              </span>
               <span className="font-semibold text-emerald-800">Concessional Credit Verified</span>
             </div>
           </div>
