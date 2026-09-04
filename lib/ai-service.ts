@@ -4,6 +4,7 @@
 // =====================================================
 
 import { GoogleGenAI } from '@google/genai'
+import { getTradeProfile } from './trade-data'
 
 function getGenAI() {
   const key = process.env.GEMINI_API_KEY
@@ -221,20 +222,22 @@ IMPORTANT GUIDELINES:
 export async function generateFeasibilityReport(
   input: BusinessInput
 ): Promise<FeasibilityReport> {
-  // Try Gemini API first
   const genAI = getGenAI()
   if (genAI) {
-    const modelsToTry = ['gemini-3.5-flash-lite', 'gemini-3.7-flash', 'gemini-flash-latest', 'gemini-3.8-flash']
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash']
     for (const modelName of modelsToTry) {
       try {
         const prompt = buildAnalysisPrompt(input, input.language || 'en')
-        const result = await genAI.models.generateContent({
+        const geminiPromise = genAI.models.generateContent({
           model: modelName,
           contents: prompt,
         })
-        const text = result.text || ''
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Gemini timeout')), 8000)
+        )
+        const result: any = await Promise.race([geminiPromise, timeoutPromise])
+        const text = result?.text || ''
 
-        // Parse JSON response
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
           const parsed = JSON.parse(jsonMatch[0])
@@ -263,7 +266,6 @@ export async function generateFeasibilityReport(
   }
 
   // Fallback to mock data
-  await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate processing
   return getMockData(input.category, input)
 }
 
@@ -309,7 +311,7 @@ STRICT INVIOLABLE DOMAIN RESTRICTIONS (ZERO TOLERANCE FOR OFF-TOPIC QUESTIONS):
 4. DO NOT ASSUME NAMES: The user's name is ${clientName}. Address them respectfully.
 5. LANGUAGE COMPLIANCE: ${langInstruction}`
 
-    const modelsToTry = ['gemini-3.5-flash-lite', 'gemini-3.7-flash', 'gemini-flash-latest', 'gemini-3.8-flash']
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash']
     for (const modelName of modelsToTry) {
       try {
         const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = []
@@ -326,21 +328,25 @@ STRICT INVIOLABLE DOMAIN RESTRICTIONS (ZERO TOLERANCE FOR OFF-TOPIC QUESTIONS):
           parts: [{ text: userMessage }],
         })
 
-        const result = await genAI.models.generateContent({
+        const geminiPromise = genAI.models.generateContent({
           model: modelName,
           contents,
           config: {
             systemInstruction,
           },
         })
-        return result.text || ''
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Gemini chat timeout')), 7500)
+        )
+        const result: any = await Promise.race([geminiPromise, timeoutPromise])
+        if (result?.text) return result.text
       } catch (error) {
         console.error(`Gemini (${modelName}) error:`, error instanceof Error ? error.message : error)
       }
     }
   }
 
-  // Mock chat responses
+  // Intelligent fallback responses
   return generateMockChatResponse(userMessage, businessContext, language)
 }
 
@@ -351,36 +357,131 @@ function generateMockChatResponse(
 ): string {
   const lower = message.toLowerCase()
   const name = context.userName || 'Entrepreneur'
+  const langKey = language === 'hi' ? 'hi' : language === 'gu' ? 'gu' : 'en'
+  const category = context.category || 'Food Processing'
+  const location = context.location || 'your local cluster'
+  const trade = getTradeProfile(category, langKey)
 
-  // Detect off-topic queries (coding, python, string reverse, trivia, etc.)
-  const isOffTopic = /code|python|reverse|program|java|javascript|c\+\+|html|function|script|algorithm|write an essay|song|lyrics|joke|who is/i.test(message)
-  
+  // Calculations
+  const margin = context.marginCapital || 50000
+  const projectCost = margin * 10
+  const loanAmount = margin * 9
+  const isMicro = loanAmount <= 140000
+  const rate = isMicro ? 6.5 : 8.0
+  const tenureYears = isMicro ? 3 : 7
+  const moratoriumMonths = isMicro ? 0 : 6
+  const quarters = tenureYears * 4
+  const approxQuarterlyEmi = Math.round((loanAmount * (1 + (rate / 100) * tenureYears)) / quarters)
+  const approxMonthlyInterestDuringMoratorium = Math.round((loanAmount * (rate / 100)) / 12)
+
+  // 1. Off-topic check
+  const isOffTopic = /code|python|reverse|program|java|javascript|c\+\+|html|function|script|algorithm|write an essay|song|lyrics|joke|who is|weather in|cricket|election/i.test(message)
   if (isOffTopic) {
     if (language === 'hi') {
-      return `नमस्ते ${name} जी! मैं ग्रामसारथी एआई हूँ। मैं केवल इस वेबसाइट और ग्रामीण व्यवसाय नियोजन, बाजार व्यवहार्यता एवं सरकारी ऋण योजनाओं से संबंधित मामलों तक ही सीमित हूँ। कंप्यूटर प्रोग्रामिंग या अन्य असंबद्ध विषयों पर उत्तर देना मेरे कार्यक्षेत्र से बाहर है। कृपया अपने व्यवसाय से संबंधित प्रश्न पूछें!`
+      return `नमस्ते ${name} जी! मैं ग्रामसारथी एआई हूँ। मैं केवल इस वेबसाइट और ग्रामीण व्यवसाय नियोजन, बाजार व्यवहार्यता एवं सरकारी ऋण योजनाओं से संबंधित मामलों तक ही सीमित हूँ। कंप्यूटर प्रोग्रामिंग या अन्य असंबद्ध विषयों पर उत्तर देना मेरे कार्यक्षेत्र से बाहर है। कृपया अपने व्यवसाय (${category}) से संबंधित प्रश्न पूछें!`
     }
     if (language === 'gu') {
-      return `નમસ્તે ${name} ભાઈ/બહેન! હું ગ્રામસારથી એઆઈ છું. હું માત્ર આ વેબસાઇટ અને ગ્રામીણ વ્યવસાય આયોજન, બજાર સદ્ધરતા તેમજ સરકારી લોન યોજનાઓ સંબંધિત બાબતો પૂરતો જ મર્યાદિત છું. કોમ્પ્યુટર પ્રોગ્રામિંગ અથવા અન્ય વિષયો પર જવાબ આપવા મારા અધિકારક્ષેત્રમાં નથી. કૃપા કરીને તમારા વ્યવસાયને લગતો પ્રશ્ન પૂછો!`
+      return `નમસ્તે ${name} ભાઈ/બહેન! હું ગ્રામસારથી એઆઈ છું. હું માત્ર આ વેબસાઇટ અને ગ્રામીણ વ્યવસાય આયોજન, બજાર સદ્ધરતા તેમજ સરકારી લોન યોજનાઓ સંબંધિત બાબતો પૂરતો જ મર્યાદિત છું. કોમ્પ્યુટર પ્રોગ્રામિંગ અથવા અન્ય વિષયો પર જવાબ આપવા મારા અધિકારક્ષેત્રમાં નથી. કૃપા કરીને તમારા વ્યવસાય (${category}) ને લગતો પ્રશ્ન પૂછો!`
     }
-    return `Namaste ${name}! I am GramSaarthi AI, your dedicated rural business advisor. I am strictly limited to answering questions related to this website, rural business planning, financial feasibility, and government loan schemes. I cannot assist with computer programming, software code, or off-topic queries. Please ask a question related to your enterprise or loan scheme!`
+    return `Namaste ${name}! I am GramSaarthi AI, your dedicated rural business advisor. I am strictly limited to answering questions related to this website, rural business planning, financial feasibility, and government loan schemes. I cannot assist with computer programming, software code, or off-topic queries. Please ask a question related to your enterprise (${category}) or loan scheme!`
   }
 
-  if (lower.includes('loan') || lower.includes('scheme') || lower.includes('borrow')) {
+  // 2. Pricing Strategy vs Competitors
+  if (lower.includes('pricing') || lower.includes('competitor') || lower.includes('price') || lower.includes('rate') || lower.includes('charge') || lower.includes('मूल्य') || lower.includes('भाव') || lower.includes('दर') || lower.includes('किंમત') || lower.includes('કિંમત') || lower.includes('સ્પર્ધા') || lower.includes('હરીફ')) {
     if (language === 'hi') {
-      return `आपकी पूंजी के आधार पर:\n\n• **मार्जिन कैपिटल** (10%): ₹${context.marginCapital?.toLocaleString('en-IN') || 'N/A'}\n• **कुल प्रोजेक्ट कोस्ट**: ₹${((context.marginCapital || 0) / 0.10).toLocaleString('en-IN')}\n• **लोन राशि** (90%): ₹${((context.marginCapital || 0) * 9).toLocaleString('en-IN')}\n• **स्कीम**: ${context.scheme === 'micro' ? 'माइक्रो फाइनेंस (6.5% p.a., 3 साल)' : 'टर्म लोन (8% p.a., 7 साल)'}\n\nकृपया आधिकारिक पुष्टि के लिए नजदीकी बैंक या SCA से संपर्क करें।`
+      return `**${trade.label} के लिए स्थानीय प्रतिस्पर्धियों के विरुद्ध मूल्य निर्धारण रणनीति:**\n\n1. **दो-स्तरीय मूल्य वास्तुकला (Two-Tier Architecture):**\n   • **कमोडिटी/सेवा बेसलाइन:** स्थानीय असंगठित स्तर पर न्यूनतम दर (उदा. ${trade.pricingBenchmarks[0]?.label}: **${trade.pricingBenchmarks[0]?.range}**)। यह नियमित ग्राहकों को जोड़ता है।\n   • **मूल्यवर्धित/ब्रांडेड ग्रेड:** सील-पैक और गुणवत्ता-प्रमाणित उत्पादों में 25–40% का प्रीमियम (उदा. ${trade.pricingBenchmarks[1]?.label}: **${trade.pricingBenchmarks[1]?.range}**)।\n\n2. **प्रतिस्पर्धी बेंचमार्क तालिका (${location}):**\n${trade.pricingBenchmarks.map(b => `   • **${b.label}:** ${b.range}`).join('\n')}\n\n3. **बाजार में प्रवेश का तरीका:**\n   स्थानीय किराना दुकानों को आरंभिक 15 दिनों के लिए 5% अतिरिक्त ट्रेड डिस्काउंट दें और 7 दिन की सख्त उधारी सीमा रखें। सीधे उपभोक्ताओं के लिए पहले 2 खरीद पर कॉम्बो छूट दें।`
     }
     if (language === 'gu') {
-      return `તમારી મૂડીના આધારે:\n\n• **માર્જિન મૂડી** (10%): ₹${context.marginCapital?.toLocaleString('en-IN') || 'N/A'}\n• **કુલ પ્રોજેક્ટ ખર્ચ**: ₹${((context.marginCapital || 0) / 0.10).toLocaleString('en-IN')}\n• **ધિરાણ પાત્રતા** (90%): ₹${((context.marginCapital || 0) * 9).toLocaleString('en-IN')}\n• **યોજના**: ${context.scheme === 'micro' ? 'માઇક્રો ફાયનાન્સ (6.5% p.a., 3 વર્ષ)' : 'ટર્મ લોન (8% p.a., 7 વર્ષ)'}\n\nકૃપા કરીને સત્તાવાર વિગતો માટે સ્થાનિક સહકારી બેંકનો સંપર્ક કરો.`
+      return `**${trade.label} માટે સ્થાનિક હરીફો સામે ભાવ નિર્ધારણ (Pricing Strategy):**\n\n1. **દ્વિ-સ્તરીય ભાવ પદ્ધતિ (Two-Tier Structure):**\n   • **સામાન્ય બેઝલાઇન:** સ્થાનિક માર્કેટ જેટલો જ વાજબી દર (દા.ત. ${trade.pricingBenchmarks[0]?.label}: **${trade.pricingBenchmarks[0]?.range}**).\n   • **વેલ્યુ-એડેડ બ્રાન્ડેડ ગ્રેડ:** આકર્ષક પેકિંગ અને ગુણવત્તાવાળા માલ પર ૨૫–૪૦% ઊંચો નફો (દા.ત. ${trade.pricingBenchmarks[1]?.label}: **${trade.pricingBenchmarks[1]?.range}**).\n\n2. **પ્રવર્તમાન બજાર ભાવ બેંચમાર્ક (${location}):**\n${trade.pricingBenchmarks.map(b => `   • **${b.label}:** ${b.range}`).join('\n')}\n\n3. **માર્કેટ એન્ટ્રી ટેક્ટિક્સ:**\n   ગામ અને આજુબાજુની રિટેલ દુકાનોને શરૂઆતના તબક્કે ૫% વધારાનું ટ્રેડ કમિશન આપો અને ઉધારી મુદત મહત્તમ ૭ દિવસની રાખો.`
     }
-    return `Based on your margin capital of ₹${context.marginCapital?.toLocaleString('en-IN') || 'N/A'}:\n\n• **Your Contribution (10%)**: ₹${context.marginCapital?.toLocaleString('en-IN')}\n• **Total Project Cost**: ₹${((context.marginCapital || 0) / 0.10).toLocaleString('en-IN')}\n• **Loan Eligibility (90%)**: ₹${((context.marginCapital || 0) * 9).toLocaleString('en-IN')}\n• **Applicable Scheme**: ${context.scheme === 'micro' ? 'Micro Finance Scheme (6.5% p.a., 3 years)' : 'Term Loan Scheme (8% p.a., 7 years)'}\n\n*This is an indicative estimate. Please verify with your nearest SCA or bank for official eligibility.*`
+    return `**Strategic Pricing vs Local Competitors for ${trade.label} in ${location}:**\n\n1. **Two-Tier Pricing Architecture:**\n   • **Commodity Baseline:** Match existing unorganized rates to win volume footfall (e.g., *${trade.pricingBenchmarks[0]?.label}*: **${trade.pricingBenchmarks[0]?.range}**).\n   • **Value-Added Packaged Grade:** Capture 25%–40% gross margins by offering clean, branded, and certified packaging (e.g., *${trade.pricingBenchmarks[1]?.label}*: **${trade.pricingBenchmarks[1]?.range}**).\n\n2. **Prevailing Market Benchmarks:**\n${trade.pricingBenchmarks.map(b => `   • **${b.label}:** ${b.range}`).join('\n')}\n\n3. **Market Penetration Playbook:**\n   Offer local kirana grocers an introductory 5% wholesale trade margin incentive with a strict 7-day payment cycle. Focus on consistency, moisture-proof packaging, and exact net weights to beat unorganized loose commodity sellers.`
   }
 
-  if (lower.includes('dairy') || lower.includes('milk') || lower.includes('cow')) {
+  // 3. Operational Costs in First 6 Months
+  if (lower.includes('operational cost') || lower.includes('first 6 months') || lower.includes('manage cost') || lower.includes('expense') || lower.includes('working capital') || lower.includes('लागत') || lower.includes('खर्च') || lower.includes('ખર્ચ')) {
     if (language === 'hi') {
-      return `**डेयरी व्यवसाय** ग्रामीण भारत में सबसे सुरक्षित और लाभदायक व्यवसायों में से एक है।\n\n✅ **यह क्यों सफल है:**\n• दूध की बिक्री से दैनिक नकद आय\n• अमूल / सहकारी मंडली द्वारा दैनिक खरीद की गारंटी\n• कामधेनु योजना और राष्ट्रीय पशुधन मिशन के तहत सरकारी सब्सिडी\n• मूल्यवर्धित उत्पाद (घी ₹550+/किलो, पनीर ₹300+/किलो)\n\n📋 **अगले कदम:**\n1. स्थानीय अमूल सहकारी समिति से संपर्क करें\n2. 3-5 उन्नत नस्ल की गायों/भैंसों से शुरुआत करें`
+      return `**प्रथम 6 महीनों में परिचालन लागत (Operational Costs) का प्रबंधन:**\n\n${trade.operationalCostAdvice}\n\n📋 **5 व्यावहारिक नियम:**\n1. **कार्यशील पूंजी रिज़र्व:** कुल लोन राशि ₹${loanAmount.toLocaleString('en-IN')} में से कम से कम 30-35% कच्चा माल खरीदने के लिए सुरक्षित रखें।\n2. **बिजली और ऊर्जा नियंत्रण:** मोटर और मशीनों पर कैपेसिटर लगाएं जिससे 3-फेज बिल में 12-15% की कमी आती है।\n3. **क्रेडिट सीमा (उधारी नियंत्रण):** किसी भी खरीदार या दुकान को ₹1,500 से अधिक की उधारी न दें और 7 दिन में रोटेशन रखें।\n4. **आपातकालीन निधि:** 3 महीने के परिचालन खर्च (लगभग ₹25,000–₹35,000) का आकस्मिक कोष अलग बैंक खाते में रखें।\n5. **सरकारी मोरेटोरियम का लाभ:** शुरुआती 6 माह केवल ब्याज (लगभग ₹${approxMonthlyInterestDuringMoratorium.toLocaleString('en-IN')}/माह) देना है, मूलधन नहीं—इस बचत को व्यवसाय वृद्धि में लगाएं।`
     }
-    return `**Dairy Farming** is one of the most viable options for rural entrepreneurs in India.\n\n✅ **Why it works:**\n• Daily income from milk sales\n• Amul/cooperative guaranteed offtake\n• Government subsidies (Kamdhenu scheme)\n• Value-added products (Ghee ₹550+/kg, Paneer ₹300+/kg)\n\n📋 **Next steps:**\n1. Contact local Amul cooperative for enrollment\n2. Apply for Kamdhenu scheme\n3. Start with 3–5 HF/Jersey crossbred cows\n\n*AI-generated estimate. Verify with local agricultural extension officer.*`
+    if (language === 'gu') {
+      return `**પ્રથમ ૬ મહિનામાં ઓપરેશનલ ખર્ચ અને કેશફ્લો મેનેજમેન્ટ:**\n\n${trade.operationalCostAdvice}\n\n📋 **૫ મુખ્ય નિયમો:**\n1. **વર્કિંગ કેપિટલ અનામત:** લોનની રકમ ₹${loanAmount.toLocaleString('en-IN')} માંથી ૩૫% રકમ કાચા માલના સ્ટોક માટે અનામત રાખો.\n2. **વીજળી બિલ ઘટાડો:** મોટર અને મશીનરી માટે કેપેસિટર પેનલ લગાવો જેથી વીજળી બિલમાં ૧૫% બચત થાય.\n3. **ઉધારી નિયંત્રણ:** કોઈપણ ગ્રાહકને ૭ દિવસથી વધુની ઉધારી ન આપો જેથી રોકડ પ્રવાહ જળવાઈ રહે.\n4. **ઈમરજન્સી ફંડ:** ૩ મહિનાના ખર્ચ જેટલી રકમ અલગ ખાતામાં રાખો.\n5. **મોરેટોરિયમનો લાભ:** પ્રથમ ૬ મહિના પ્રિન્સિપાલ હપ્તો નથી, માત્ર વ્યાજ (આશરે ₹${approxMonthlyInterestDuringMoratorium.toLocaleString('en-IN')}/મહિને) ભરવાનું છે.`
+    }
+    return `**Operational Cost & Working Capital Management in the First 6 Months:**\n\n${trade.operationalCostAdvice}\n\n📋 **Actionable Financial Checklist:**\n1. **Working Capital Ring-Fencing:** Keep 30%–35% of your ₹${loanAmount.toLocaleString('en-IN')} loan liquid to capitalize on post-harvest grain/raw material price dips.\n2. **Utility & Power Optimization:** Install power factor correction capacitors on 3-phase machinery to cut commercial electricity tariffs by 12%–15%.\n3. **Receivables Governance:** Enforce a strict 7-day credit ledger. Never let local store receivables exceed ₹1,500 per counter to avoid cash flow chokes.\n4. **Buffer Reserve:** Keep 3 months of baseline operational overheads (~₹25,000–₹35,000) in an emergency liquid flexi-deposit.\n5. **Leverage the 6-Month Moratorium:** Pay only monthly simple interest (~₹${approxMonthlyInterestDuringMoratorium.toLocaleString('en-IN')}/month), plowing all retained operational surpluses back into expanding inventory.`
   }
 
-  return `Thank you for your question regarding your ${context.category || 'enterprise'} in ${context.location || 'your area'}.\n\nI am GramSaarthi AI, your dedicated rural business advisor. Based on your active business profile:\n\n• **Entrepreneur**: ${name}\n• **Business**: ${context.category || 'Not specified'}\n• **Location**: ${context.location || 'Not specified'}\n• **Capital**: ₹${context.marginCapital?.toLocaleString('en-IN') || 'Not specified'}\n\nI can help you analyze:\n1. Pricing strategies against local competitors\n2. Detailed quarterly EMI schedules under government schemes\n3. Value-addition opportunities to maximize profit margins\n\nHow would you like to proceed?`
+  // 4. Moratorium Grace Period
+  if (lower.includes('moratorium') || lower.includes('grace period') || lower.includes('grace') || lower.includes('मोरेटोरियम') || lower.includes('ग्रेस') || lower.includes('ગ્રેસ') || lower.includes('મોરેટોરિયમ')) {
+    if (language === 'hi') {
+      return `**संवैधानिक मोरेटोरियम (Grace Period) कैसे कार्य करता है:**\n\n• **अवधि:** राज्य SCA टर्म लोन योजना के तहत आपको **6 महीने का मोरेटोरियम (ऋण स्थगन)** प्राप्त होता है।\n• **मूलधन पर रोक:** इन 6 महीनों में आपको ₹${loanAmount.toLocaleString('en-IN')} का मूलधन (Principal) नहीं चुकाना होता है।\n• **केवल ब्याज भुगतान:** आपको केवल वास्तविक उपयोग की गई राशि पर 8% वार्षिक दर से साधारण ब्याज देना होता है (लगभग **₹${approxMonthlyInterestDuringMoratorium.toLocaleString('en-IN')} प्रतिमाह**)।\n• **उद्देश्य:** यह अवधि मशीनरी की स्थापना, बिजली कनेक्शन, ट्रायल प्रोडक्शन और बाजार में माल स्थापित करने के लिए दी जाती है ताकि उद्यमी पर शुरुआती दबाव न पड़े।\n• **नियमित किस्त:** 7वें महीने से आपका पूर्ण मासिक/त्रैमासिक ईएमआई चक्र शुरू होगा।`
+    }
+    if (language === 'gu') {
+      return `**વૈધાનિક મોરેટોરિયમ (Grace Period) ની વિગત:**\n\n• **સમયગાળો:** ટર્મ લોન સ્કીમ હેઠળ **૬ મહિનાનો મોરેટોરિયમ ગાળો** માન્ય છે.\n• **મુદ્દલ પર મુક્તિ:** પ્રથમ ૬ મહિના સુધી લોનની મુદ્દલ (Principal) ચૂકવવાની હોતી નથી.\n• **માત્ર વ્યાજ ચૂકવણી:** આ સમયગાળા દરમિયાન માત્ર ૮% સાદું વ્યાજ ભરવાનું રહે છે (આશરે **₹${approxMonthlyInterestDuringMoratorium.toLocaleString('en-IN')} પ્રતિ માસ**).\n• **મુખ્ય હેતુ:** મશીનરી ઇન્સ્ટોલેશન, લાયસન્સ, વીજ જોડાણ અને ટ્રાયલ પ્રોડક્શન દરમિયાન ઉદ્યોગ સાહસિક પર હપ્તાનો બોજ ન પડે તે માટે આ સુવિધા છે.\n• **નિયમિત હપ્તો:** ૭મા મહિનાથી નિયમિત માસિક/ત્રિમાસિક ઈએમઆઈ શરૂ થશે.`
+    }
+    return `**How the Statutory Moratorium (Grace Period) Works:**\n\n• **Duration:** Under the State Channelising Agency (SCA) Term Loan Scheme, you receive a **6-month statutory moratorium**.\n• **Principal Holiday:** For the first 6 months, zero principal repayment is required on your ₹${loanAmount.toLocaleString('en-IN')} loan.\n• **Interest-Only Servicing:** You only pay monthly simple interest at 8% p.a. on disbursed capital (approx. **₹${approxMonthlyInterestDuringMoratorium.toLocaleString('en-IN')} / month**).\n• **Economic Rationale:** This shields your cash reserves during civil works, machinery installation, 3-phase power energization, FSSAI compliance, and initial customer trial runs.\n• **Full Amortization:** Full principal + interest quarterly EMIs start only from Month 7 onwards across the remaining 6.5 years.`
+  }
+
+  // 5. Quarterly EMI Schedules & Loan Breakdown
+  if (lower.includes('emi') || lower.includes('quarterly') || lower.includes('schedule') || lower.includes('repayment') || lower.includes('installment') || lower.includes('loan') || lower.includes('लोन') || lower.includes('ऋण') || lower.includes('किस्त') || lower.includes('હપ્તા') || lower.includes('લોન') || lower.includes('ધિરાણ') || lower.includes('ઈએમઆઈ')) {
+    if (language === 'hi') {
+      return `**सरकारी ऋण योजना के तहत त्रैमासिक ईएमआई और वित्तीय विवरण:**\n\n• **उद्यमी का अंशदान (10%):** ₹${margin.toLocaleString('en-IN')}\n• **कुल स्वीकृत परियोजना लागत:** ₹${projectCost.toLocaleString('en-IN')}\n• **ऋण पात्रता (90% ऋण):** ₹${loanAmount.toLocaleString('en-IN')}\n• **लागू योजना:** ${isMicro ? 'माइक्रो फाइनेंस स्कीम (6.5% p.a., 3 वर्ष)' : 'टर्म लोन स्कीम (8% p.a., 7 वर्ष)'}\n• **मोरेटोरियम:** ${moratoriumMonths > 0 ? `${moratoriumMonths} माह (केवल ब्याज भुगतान)` : 'शून्य'}\n• **अनुमानित त्रैमासिक ईएमआई:** **₹${approxQuarterlyEmi.toLocaleString('en-IN')} प्रति तिमाही** (28 तिमाहियां)\n• **मासिक समतुल्य ईएमआई:** लगभग ₹${Math.round(approxQuarterlyEmi / 3).toLocaleString('en-IN')} / माह\n\n💡 *यह ईएमआई जिला केंद्रीय सहकारी बैंक (DCCB) या अधिकृत SCA चैनल के माध्यम से ई-मेंडेट (NACH) द्वारा डेबिट होती है।*`
+    }
+    if (language === 'gu') {
+      return `**સરકારી લોન યોજના હેઠળ ત્રિમાસિક ઈએમઆઈ અને નાણાકીય વિગત:**\n\n• **તમારું રોકાણ (૧૦% માર્જિન):** ₹${margin.toLocaleString('en-IN')}\n• **કુલ પ્રોજેક્ટ ખર્ચ:** ₹${projectCost.toLocaleString('en-IN')}\n• **લોન પાત્રતા (૯૦% ધિરાણ):** ₹${loanAmount.toLocaleString('en-IN')}\n• **યોજના:** ${isMicro ? 'માઇક્રો ફાયનાન્સ (૬.૫% p.a., ૩ વર્ષ)' : 'ટર્મ લોન સ્કીમ (૮% p.a., ૭ વર્ષ)'}\n• **મોરેટોરિયમ:** ${moratoriumMonths} મહિના પ્રિન્સિપાલ હોલિડે\n• **અંદાજિત ત્રિમાસિક હપ્તો (EMI):** **₹${approxQuarterlyEmi.toLocaleString('en-IN')} પ્રતિ ત્રિમાસિક**\n• **માસિક સમકક્ષ:** આશરે ₹${Math.round(approxQuarterlyEmi / 3).toLocaleString('en-IN')} પ્રતિ માસ\n\n💡 *આ હપ્તો સહકારી બેંક અથવા SCA મારફતે NACH ઓટો-ડેબિટ દ્વારા જમા થાય છે.*`
+    }
+    return `**Detailed Loan & Quarterly EMI Schedule under Government Scheme:**\n\n• **Entrepreneur Equity (10%):** ₹${margin.toLocaleString('en-IN')}\n• **Total Project Cost:** ₹${projectCost.toLocaleString('en-IN')}\n• **Concessional Debt Eligibility (90%):** ₹${loanAmount.toLocaleString('en-IN')}\n• **Sanctioned Scheme:** ${isMicro ? 'Micro Finance Scheme (6.5% p.a., 3 years)' : 'Term Loan Scheme (8.0% p.a., 7 years)'}\n• **Statutory Moratorium:** ${moratoriumMonths} Months (Principal holiday)\n• **Estimated Quarterly EMI:** **₹${approxQuarterlyEmi.toLocaleString('en-IN')} per quarter** (~28 quarterly installments)\n• **Monthly Equivalent:** approx. ₹${Math.round(approxQuarterlyEmi / 3).toLocaleString('en-IN')} / month\n\n💡 *Repayments are structured on a quarterly cycle debited via NACH mandate through your designated District Central Cooperative Bank (DCCB) or State SCA nodal branch.*`
+  }
+
+  // 6. Value-Addition & Margin Expansion
+  if (lower.includes('value-addition') || lower.includes('value addition') || lower.includes('margin') || lower.includes('profit') || lower.includes('मूल्यवर्धन') || lower.includes('मुनाफा') || lower.includes('નફો') || lower.includes('વેલ્યુ')) {
+    if (language === 'hi') {
+      return `**${trade.label} में लाभ मार्जिन बढ़ाने के लिए मूल्यवर्धन (Value Addition) के अवसर:**\n\n${trade.valueAdditionAdvice}\n\n🎯 **सफलता के 3 मुख्य कदम:**\n1. **ब्रांडिंग एवं पैकेजिंग:** खुले माल के बजाय 500 ग्राम, 1 किग्रा और 5 किग्रा के आकर्षक सील-पैक पाउच बनाएं।\n2. **सीधे संस्थागत अनुबंध:** स्थानीय स्कूल, हॉस्टल और भोजनालयों से मासिक आपूर्ति का अनुबंध करें।\n3. **बाय-प्रोडक्ट का सदुपयोग:** प्रसंस्करण के दौरान निकलने वाले अवशेष (जैसे चोकर, खली) को स्थानीय पशुपालकों को बेचकर अतिरिक्त आमदनी बनाएं।`
+    }
+    if (language === 'gu') {
+      return `**${trade.label} માં નફો વધારવા માટે વેલ્યુ-એડિશન (Value Addition) ની તકો:**\n\n${trade.valueAdditionAdvice}\n\n🎯 **૩ મહત્વના પગલાં:**\n1. **પેકિંગ અને બ્રાન્ડિંગ:** છૂટક વેચવાને બદલે ચોખ્ખા સીલ-પેક પાઉચમાં પોતાના બ્રાન્ડ સાથે વેચો.\n2. **જથ્થાબંધ ઓર્ડર:** સ્થાનિક હોસ્ટેલ અને કેન્ટીન સાથે માસિક સપ્લાયના કરાર કરો.\n3. **બાય-પ્રોડક્ટ વેચાણ:** પ્રોસેસિંગમાંથી નીકળતી આડપેદાશો (ખોળ, થૂલું) પશુપાલકોને વેચી વધારાની આવક મેળવો.`
+    }
+    return `**Value-Addition & Margin Expansion Blueprint for ${trade.label}:**\n\n${trade.valueAdditionAdvice}\n\n🎯 **3 High-ROI Implementation Steps:**\n1. **Branded Retail Packaging:** Move from unbranded bulk commodities to 500g, 1kg, and 5kg food-grade sealed pouches carrying your regional brand identity and FSSAI mark.\n2. **Direct Institutional Offtake:** Partner with nearby hostels, rural hospitals, schools, and marriage caterers for recurring monthly bulk purchase contracts.\n3. **Monetize Secondary Residuals:** Sell processing by-products (bran, husk, oil-cake, or crop residue) as nutritious cattle feed to local dairy farmers for ancillary pure-profit cash flow.`
+  }
+
+  // 7. Government Subsidies & Scheme Convergence
+  if (lower.includes('subsidy') || lower.includes('subsidies') || lower.includes('combine') || lower.includes('pmegp') || lower.includes('pmfme') || lower.includes('mudra') || lower.includes('सब्सिडी') || lower.includes('अनुदान') || lower.includes('સબસીડી') || lower.includes('સબસિડી') || lower.includes('સહાય')) {
+    if (language === 'hi') {
+      return `**इस ऋण योजना के साथ संयोजित की जा सकने वाली सरकारी सब्सिडी:**\n\n${trade.subsidyConvergence}\n\n🏛️ **प्रमुख योजनाएं जिनका लाभ आप ले सकते हैं:**\n1. **PMFME (खाद्य प्रसंस्करण के लिए):** 35% क्रेडिट-लिंक्ड पूंजीगत सब्सिडी (अधिकतम ₹10 लाख)।\n2. **PMEGP (विनिर्माण एवं सेवा के लिए):** ग्रामीण क्षेत्रों में 25% से 35% मार्जिन मनी सब्सिडी।\n3. **राज्य SCA रियायती ऋण:** केवल 8% वार्षिक ब्याज दर पर 90% तक ऋण।\n4. **मुद्रा योजना (Mudra):** ₹50,000 से ₹10 लाख तक संपार्श्विक-मुक्त (Collateral-Free) कार्यशील पूंजी ऋण।\n\n💡 *सलाह: अपने जिले के जिला उद्योग केंद्र (DIC) या नजदीकी SCA कार्यालय से संपर्क कर सब्सिडी को अपने टर्म लोन से लिंक कराएं।*`
+    }
+    if (language === 'gu') {
+      return `**આ લોન યોજના સાથે જોડી શકાતી સરકારી સબસિડીઓની વિગત:**\n\n${trade.subsidyConvergence}\n\n🏛️ **મુખ્ય સહાય યોજનાઓ:**\n1. **PMFME (ફૂડ પ્રોસેસિંગ):** ૩૫% ક્રેડિટ-લિંક્ડ કેપિટલ સબસિડી (મહત્તમ ₹૧૦ લાખ).\n2. **PMEGP (ઉત્પાદન અને સર્વિસ):** ગ્રામ્ય વિસ્તારમાં ૨૫% થી ૩૫% માર્જિન મની સબસિડી.\n3. **રાજ્ય SCA ટર્મ લોન:** માત્ર ૮% ના રાહત દરે ૯૦% સુધી ધિરાણ.\n4. **પ્રધાનમંત્રી મુદ્રા લોન:** કોઈપણ પ્રકારના ગીરો/કોલેટરલ વગર કાર્યકારી મૂડી ધિરાણ.\n\n💡 *જિલ્લા ઉદ્યોગ કેન્દ્ર (DIC) અથવા SCA નોડલ ઓફિસમાં અરજી કરી સબસિડીનો લાભ લો.*`
+    }
+    return `**Government Subsidies Stackable with Your ₹${loanAmount.toLocaleString('en-IN')} Concessional Loan:**\n\n${trade.subsidyConvergence}\n\n🏛️ **Primary Subsidy Convergence Schemes:**\n1. **PMFME Scheme (Food Processing Units):** 35% credit-linked capital subsidy on eligible project costs up to a maximum cap of ₹10 Lakhs.\n2. **PMEGP (Prime Minister Employment Generation Programme):** 25% (general category) to 35% (special/rural category) margin money subsidy.\n3. **State Channelising Agency (SCA) Concessional Term Loan:** Inherent interest subvention capping debt interest at just 8.0% p.a. for up to 7 years.\n4. **PM MUDRA (Micro Units Development & Refinance):** Up to ₹10 Lakhs 100% collateral-free working capital facility.\n\n💡 *Regulatory Action: File your subsidy docket through the District Industries Centre (DIC) or State SCA nodal branch to credit your margin subsidy directly against the term loan principal.*`
+  }
+
+  // 8. Equipment & Machinery
+  if (lower.includes('equipment') || lower.includes('machinery') || lower.includes('machine') || lower.includes('उपकरण') || lower.includes('मशीन') || lower.includes('સાધન')) {
+    if (language === 'hi') {
+      return `**${trade.label} के लिए आवश्यक उपकरण एवं मशीनरी:**\n\n• **मुख्य मशीनरी:** भारी शुल्क 3-फेज मोटर चलित प्रसंस्करण यूनिट / उपकरण।\n• **पैकेजिंग यूनिट:** डिजिटल वजन कांटा (Weighing Scale) एवं हीट-सीलर पाउच पैकेजिंग मशीन।\n• **सुरक्षा एवं गुणवत्ता:** वोल्टेज स्टेबलाइजर एवं अर्थिंग किट।\n• **अनुमानित उपकरण लागत:** ₹${Math.round(projectCost * 0.55).toLocaleString('en-IN')} (परियोजना लागत का लगभग 50-60%)\n• **कार्यशील पूंजी (कच्चा माल):** ₹${Math.round(projectCost * 0.35).toLocaleString('en-IN')}\n\n💡 *हमेशा ISI या CE प्रमाणित निर्माता से कोटेशन लें ताकि बैंक लोन स्वीकृति में रुकावट न आए।*`
+    }
+    if (language === 'gu') {
+      return `**${trade.label} માટે જરૂરી મશીનરી અને સાધનો:**\n\n• **મુખ્ય મશીનરી:** હેવી డ્યુટી ૩-ફેઝ મોટર ડ્રિવન મશીનરી.\n• **પેકિંગ યુનિટ:** ડિજિટલ વજન કાંટો અને હીટ-સીલર પાઉચ પેકિંગ મશીન.\n• **વીજ સુરક્ષા:** કેપેસિટર પેનલ અને સ્ટેબિલાઇઝર.\n• **અંદાજિત સાધન ખર્ચ:** ₹${Math.round(projectCost * 0.55).toLocaleString('en-IN')} (પ્રોજેક્ટ ખર્ચના આશરે ૫૫%)\n• **વર્કિંગ કેપિટલ (કાચો માલ):** ₹${Math.round(projectCost * 0.35).toLocaleString('en-IN')}\n\n💡 *બેંક લોન મંજૂરી માટે અધિકૃત ઉત્પાદકનું જીએસટી કોટેશન જોડવું અનિવાર્ય છે.*`
+    }
+    return `**Essential Machinery & Equipment Recommendations for ${trade.label}:**\n\n• **Primary Production Equipment:** Commercial-grade 3-phase machinery tailored for ${trade.label}.\n• **Packaging & Measurement:** Precision digital weighing scale (0.1g to 50kg) and continuous band heat-sealing machine.\n• **Power Infrastructure:** Three-phase commercial energization with power-factor capacitors.\n• **Machinery Allocation:** Approx. ₹${Math.round(projectCost * 0.55).toLocaleString('en-IN')} (50%–60% of total ₹${projectCost.toLocaleString('en-IN')} project outlay).\n• **Raw Material Working Capital:** Approx. ₹${Math.round(projectCost * 0.35).toLocaleString('en-IN')}.\n\n💡 *Bank Compliance: Procure GST-compliant quotations from verified manufacturers to attach with your SCA loan dossier.*`
+  }
+
+  // 9. Licenses & FSSAI
+  if (lower.includes('license') || lower.includes('fssai') || lower.includes('registration') || lower.includes('udyam') || lower.includes('लाइसेंस') || lower.includes('લાયસન્સ')) {
+    if (language === 'hi') {
+      return `**${trade.label} के लिए आवश्यक सरकारी लाइसेंस एवं पंजीकरण:**\n\n1. **उद्यम आधार (Udyam MSME):** निःशुल्क ऑनलाइन पंजीकरण (सरकारी सब्सिडी के लिए अनिवार्य)।\n2. **FSSAI पंजीकरण:** खाद्य व्यवसाय के लिए बेसिक FSSAI लाइसेंस (₹100/वर्ष) अनिवार्य है।\n3. **ग्राम पंचायत एनओसी (NOC):** व्यवसाय स्थापना हेतु स्थानीय ग्राम पंचायत की व्यापार अनुमति।\n4. **3-फेज वाणिज्यिक विद्युत भार:** बिजली विभाग से व्यावसायिक बिजली कनेक्शन की स्वीकृति।\n5. **जीएसटी (GST):** यदि वार्षिक टर्नओवर ₹40 लाख से कम है तो स्वैच्छिक है, परंतु अंतरराज्यीय व्यापार के लिए अनुशंसित है।`
+    }
+    if (language === 'gu') {
+      return `**${trade.label} માટે જરૂરી સરકારી લાયસન્સ અને મંજૂરીઓ:**\n\n1. **ઉદ્યમ રજીસ્ટ્રેશન (Udyam MSME):** વિનામૂલ્યે ઓનલાઇન રજીસ્ટ્રેશન.\n2. **FSSAI લાયસન્સ:** ફૂડ એકમ માટે મૂળભૂત FSSAI રજીસ્ટ્રેશન ફરજિયાત છે.\n3. **ગ્રામ પંચાયત NOC:** સ્થાનિક ગ્રામ પંચાયત તરફથી વેપાર મંજૂરી.\n4. **૩-ફેઝ કોમર્શિયલ વીજ કનેક્શન:** મશીનરી ચલાવવા માટે વીજળી બોર્ડની મંજૂરી.\n5. **GST નોંધણી:** વાર્ષિક ટર્નઓવર ₹૪૦ લાખથી ઓછું હોય ત્યાં સુધી મરજિયાત છે.`
+    }
+    return `**Statutory Licenses & Regulatory Clearances for ${trade.label}:**\n\n1. **Udyam Aadhaar MSME Registration:** Free instant portal registration (mandatory for all central/state subsidy claims).\n2. **FSSAI Food Safety Registration:** Basic Form A registration (₹100/year) required before commencing food or dairy sales.\n3. **Gram Panchayat Trade NOC:** Local trade permit issued by the village panchayat secretary.\n4. **Commercial 3-Phase Power Load Sanction:** Applied via state electricity distribution utility.\n5. **GSTIN Registration:** Voluntary if annual turnover is below ₹40 Lakhs, but recommended for input tax credits on machinery.`
+  }
+
+  // Default interactive assistant greeting
+  if (language === 'hi') {
+    return `नमस्ते ${name} जी! 🙏\n\nमैं ग्रामसारथी एआई हूँ, आपका समर्पित ग्रामीण व्यापार सलाहकार। आपके सक्रिय व्यवसाय **${trade.label}** (${location}) के विश्लेषण के अनुसार:\n\n• **उद्यमी:** ${name}\n• **व्यवसाय श्रेणी:** ${trade.label}\n• **स्थान:** ${location}\n• **मार्जिन पूंजी:** ₹${margin.toLocaleString('en-IN')}\n• **पात्र ऋण राशि:** ₹${loanAmount.toLocaleString('en-IN')} (8% ब्याज, 7 वर्ष)\n\nमैं आपके इन महत्वपूर्ण प्रश्नों में सीधी सहायता कर सकता हूँ:\n1. स्थानीय प्रतिस्पर्धियों के विरुद्ध **मूल्य निर्धारण रणनीति (Pricing Strategy)**\n2. पहले 6 महीनों में **परिचालन लागत (Operational Costs) का प्रबंधन**\n3. सरकारी योजनाओं के तहत **त्रैमासिक ईएमआई और मोरेटोरियम की जानकारी**\n4. मुनाफा 3 गुना करने के लिए **मूल्यवर्धन (Value Addition) के उपाय**\n5. **सरकारी सब्सिडी (PMFME / PMEGP) का संयोजन**\n\nआप किस विषय पर जानकारी प्राप्त करना चाहते हैं?`
+  }
+
+  if (language === 'gu') {
+    return `નમસ્તે ${name} ભાઈ/બહેન! 🙏\n\nહું ગ્રામસારથી એઆઈ છું, તમારો ગ્રામીણ વ્યવસાય સલાહકાર. તમારા સક્રિય વ્યવસાય **${trade.label}** (${location}) ની વિગતો મુજબ:\n\n• **સાહસિક:** ${name}\n• **વ્યવસાય:** ${trade.label}\n• **સ્થળ:** ${location}\n• **માર્જિન મૂડી:** ₹${margin.toLocaleString('en-IN')}\n• **પાત્ર લોન:** ₹${loanAmount.toLocaleString('en-IN')} (૮% વ્યાજ દર, ૭ વર્ષ)\n\nહું તમને નીચેની બાબતોમાં સચોટ માર્ગદર્શન આપી શકું છું:\n1. સ્થાનિક હરીફો સામે **ભાવ નિર્ધારણ પદ્ધતિ (Pricing Strategy)**\n2. પ્રથમ ૬ મહિનામાં **ઓપરેશનલ ખર્ચ અને વર્કિંગ કેપિટલ મેનેજમેન્ટ**\n3. સરકારી સ્કીમ હેઠળ **ત્રિમાસિક ઈએમઆઈ અને મોરેટોરિયમ નિયમો**\n4. નફો વધારવા માટે **વેલ્યુ-એડિશન (Value Addition) ના રસ્તા**\n5. **સરકારી સબસિડી (PMFME / PMEGP) નું જોડાણ**\n\nતમે કઈ વિગત જાણવા માંગો છો?`
+  }
+
+  return `Namaste ${name}! 🙏\n\nI am GramSaarthi AI, your dedicated rural enterprise advisor. Based on your active business profile for **${trade.label}** in **${location}**:\n\n• **Entrepreneur**: ${name}\n• **Enterprise**: ${trade.label}\n• **Location**: ${location}\n• **Margin Capital**: ₹${margin.toLocaleString('en-IN')}\n• **Concessional Loan**: ₹${loanAmount.toLocaleString('en-IN')} (8% p.a., 7 years)\n\nI am equipped to provide precise, actionable guidance on:\n1. **Pricing strategies vs local competitors** (two-tier pricing & benchmark tables)\n2. **Operational cost & working capital management in the first 6 months**\n3. **Statutory 6-month moratorium grace period & quarterly EMI schedules**\n4. **Value-addition opportunities to maximize gross profit margins**\n5. **Government subsidy convergence (PMFME, PMEGP, Mudra, State SCAs)**\n\nWhich of these areas would you like to explore?`
 }

@@ -21,9 +21,10 @@ import {
   Loader2
 } from 'lucide-react'
 import { useLanguage } from '@/lib/language-context'
+import { getTradeProfile } from '@/lib/trade-data'
 
 export default function ReportPage() {
-  const { t } = useLanguage()
+  const { language, t } = useLanguage()
   const dossierRef = useRef<HTMLDivElement>(null)
   const [downloading, setDownloading] = useState(false)
   const [data, setData] = useState({
@@ -44,6 +45,8 @@ export default function ReportPage() {
     score: 84,
     date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
   })
+
+  const trade = getTradeProfile(data.category, language.toLowerCase())
 
   useEffect(() => {
     let entrepreneurName = 'Rajesh Patel'
@@ -272,10 +275,9 @@ export default function ReportPage() {
                   <CheckCircle2 className="w-4 h-4 text-emerald-700" /> {t('report.strengths')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
-                  <li>Direct access to established Gujarat cooperative network (Amul daily routes).</li>
-                  <li>Inherent daily liquidity generation from continuous morning/evening yields.</li>
-                  <li>Eligibility for State livestock shelter subsidies under Kamdhenu scheme.</li>
-                  <li>Deep familial familiarity with animal husbandry practices in Anand-Savli belt.</li>
+                  {trade.strengths.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
                 </ul>
               </div>
 
@@ -285,9 +287,9 @@ export default function ReportPage() {
                   <ShieldAlert className="w-4 h-4 text-rose-700" /> {t('report.weaknesses')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
-                  <li>High operational labor intensity requiring uninterrupted bi-daily attention.</li>
-                  <li>Perishable inventory demanding immediate offtake or cold-chain chilling access.</li>
-                  <li>Initial capital heavily locked into biological assets vulnerable to disease.</li>
+                  {trade.weaknesses.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
                 </ul>
               </div>
 
@@ -297,9 +299,9 @@ export default function ReportPage() {
                   <TrendingUp className="w-4 h-4 text-blue-700" /> {t('report.opportunities')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
-                  <li>Value-addition into Ghee (₹550–680/kg) and Paneer (₹320/kg) multiplies gross margins 3x.</li>
-                  <li>Proximity to Vadodara urban center (22 km) enables premium A2 milk delivery models.</li>
-                  <li>Institutional bulk supply contracts for local residential boarding institutes.</li>
+                  {trade.opportunities.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
                 </ul>
               </div>
 
@@ -309,9 +311,9 @@ export default function ReportPage() {
                   <ShieldAlert className="w-4 h-4 text-amber-700" /> {t('report.threats')}
                 </div>
                 <ul className="text-xs text-gray-700 space-y-1.5 list-disc list-inside">
-                  <li>Severe summer fodder price surges (up to 30% inflation in peak dry periods).</li>
-                  <li>Foot-and-Mouth Disease (FMD) risks requiring strict vaccination compliance.</li>
-                  <li>Nearest full-capacity veterinary hospital located 7.5 km away at Taluka HQ.</li>
+                  {trade.threats.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -322,29 +324,25 @@ export default function ReportPage() {
             <div className="space-y-2">
               <h4 className="font-bold text-gray-900 text-sm">{t('report.competitorDensity')}</h4>
               <p className="text-xs text-gray-600 leading-relaxed">
-                Within the immediate 5 km radius of {data.location}, local micro-producers operate. Value-addition into processed goods and institutional bulk procurement provides open market opportunity.
+                {language === 'HI' ? (
+                  <><strong>{data.location}</strong> के 5 किमी दायरे में: {trade.competitorDensityDesc}</>
+                ) : language === 'GU' ? (
+                  <><strong>{data.location}</strong> ની આસપાસ ૫ કિમી વિસ્તારમાં: {trade.competitorDensityDesc}</>
+                ) : (
+                  <>Within a 5 km radius of <strong>{data.location}</strong>: {trade.competitorDensityDesc}</>
+                )}
               </p>
             </div>
 
             <div className="space-y-2">
               <h4 className="font-bold text-gray-900 text-sm">{t('report.pricingStrategy')}</h4>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Commodity Baseline</span>
-                  <p className="font-bold text-gray-900">₹42 – ₹48 / unit</p>
-                </div>
-                <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Value-Added Grade</span>
-                  <p className="font-bold text-gray-900">₹550 – ₹680 / unit</p>
-                </div>
-                <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Direct Institutional</span>
-                  <p className="font-bold text-gray-900">₹280 – ₹350 / unit</p>
-                </div>
-                <div className="p-2 bg-gray-50 rounded-xl border">
-                  <span className="text-gray-500 font-medium">Packaged Retail</span>
-                  <p className="font-bold text-gray-900">₹60 – ₹80 / unit</p>
-                </div>
+                {trade.pricingBenchmarks.map((bm, idx) => (
+                  <div key={idx} className="p-2 bg-gray-50 rounded-xl border">
+                    <span className="text-gray-500 font-medium block truncate">{bm.label}</span>
+                    <p className="font-bold text-gray-900">{bm.range}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
