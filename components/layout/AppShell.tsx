@@ -29,29 +29,35 @@ export default function AppShell({ children }: ShellProps) {
   const { language, setLanguage, t } = useLanguage()
 
   useEffect(() => {
-    const userStr = localStorage.getItem('gs_user')
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr)
-        if (u.name) setUserName(u.name)
-        if (u.location) setUserLocation(u.location)
-      } catch (e) {
-        console.error(e)
+    const syncUser = () => {
+      const userStr = localStorage.getItem('gs_user')
+      if (userStr) {
+        try {
+          const u = JSON.parse(userStr)
+          if (u.name) setUserName(u.name)
+          if (u.location) setUserLocation(u.location)
+        } catch (e) {
+          console.error(e)
+        }
+      }
+
+      const analysisStr = localStorage.getItem('gs_analysis')
+      if (analysisStr) {
+        try {
+          const a = JSON.parse(analysisStr)
+          const locParts = [a.village, a.block, a.district].filter(Boolean)
+          if (locParts.length > 0) {
+            setUserLocation(locParts.join(', '))
+          }
+        } catch (e) {
+          console.error(e)
+        }
       }
     }
 
-    const analysisStr = localStorage.getItem('gs_analysis')
-    if (analysisStr) {
-      try {
-        const a = JSON.parse(analysisStr)
-        const locParts = [a.village, a.block, a.district].filter(Boolean)
-        if (locParts.length > 0) {
-          setUserLocation(locParts.join(', '))
-        }
-      } catch (e) {
-        console.error(e)
-      }
-    }
+    syncUser()
+    window.addEventListener('gs_report_changed', syncUser)
+    return () => window.removeEventListener('gs_report_changed', syncUser)
   }, [])
 
   const navItems = [

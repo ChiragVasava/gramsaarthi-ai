@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppShell from '@/components/layout/AppShell'
 import Link from 'next/link'
 import { 
@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Sliders,
   Sparkles,
-  Info
+  Info,
+  Briefcase
 } from 'lucide-react'
 import { 
   calculateFinancials, 
@@ -25,15 +26,44 @@ import {
   ApplicantCategory
 } from '@/lib/financial-engine'
 import { useLanguage } from '@/lib/language-context'
+import { getAllReports, getActiveReport, BusinessReport } from '@/lib/report-store'
 
 export default function CalculatorPage() {
   const { t } = useLanguage()
+  const [reportsList, setReportsList] = useState<BusinessReport[]>([])
+  const [selectedReportId, setSelectedReportId] = useState<string>('')
   const [margin, setMargin] = useState<number>(100000)
   const [enterpriseCategory, setEnterpriseCategory] = useState<string>('Dairy')
   const [applicantCategory, setApplicantCategory] = useState<string>('general')
   const [enableOverride, setEnableOverride] = useState<boolean>(false)
   const [customMarginPercent, setCustomMarginPercent] = useState<number>(15)
   const [interestWaived, setInterestWaived] = useState<boolean>(false)
+
+  useEffect(() => {
+    const list = getAllReports()
+    setReportsList(list)
+    const active = getActiveReport()
+    if (active) {
+      setSelectedReportId(active.id)
+      setMargin(active.marginCapital)
+      setEnterpriseCategory(active.category)
+      if (active.applicantCategory) {
+        setApplicantCategory(active.applicantCategory)
+      }
+    }
+  }, [])
+
+  const handleSelectBusiness = (id: string) => {
+    setSelectedReportId(id)
+    const target = reportsList.find((r) => r.id === id)
+    if (target) {
+      setMargin(target.marginCapital)
+      setEnterpriseCategory(target.category)
+      if (target.applicantCategory) {
+        setApplicantCategory(target.applicantCategory)
+      }
+    }
+  }
 
   const fin = calculateFinancials(margin, {
     category: applicantCategory,
@@ -69,8 +99,27 @@ export default function CalculatorPage() {
               {t('calc.subtitle')}
             </p>
           </div>
-          <div className="text-xs text-emerald-800 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200 font-mono">
-            P = Margin ÷ {Math.round(fin.marginPercent * 100)}% | L = P × {fin.fundingPercent}%
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            {reportsList.length > 0 && (
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-2 rounded-xl text-xs">
+                <Briefcase className="w-4 h-4 text-emerald-700" />
+                <span className="font-semibold text-gray-600">Pre-fill:</span>
+                <select
+                  value={selectedReportId}
+                  onChange={(e) => handleSelectBusiness(e.target.value)}
+                  className="bg-transparent font-bold text-gray-900 outline-none cursor-pointer"
+                >
+                  {reportsList.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.category} (₹{r.marginCapital.toLocaleString('en-IN')})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div className="text-xs text-emerald-800 bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200 font-mono">
+              P = Margin ÷ {Math.round(fin.marginPercent * 100)}% | L = P × {fin.fundingPercent}%
+            </div>
           </div>
         </div>
 

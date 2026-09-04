@@ -1,94 +1,75 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import AppShell from '@/components/layout/AppShell'
 import Link from 'next/link'
 import { 
-  FileText, 
   Download, 
-  Share2, 
-  Printer, 
-  Sparkles, 
-  MapPin, 
-  ShieldAlert, 
   Coins, 
-  Layers, 
+  ShieldAlert, 
   TrendingUp, 
   CheckCircle2, 
-  Clock, 
-  ChevronRight,
+  Layers, 
+  MapPin, 
+  Sparkles,
   Bot,
-  Loader2
+  Loader2,
+  Briefcase,
+  ChevronDown
 } from 'lucide-react'
 import { useLanguage } from '@/lib/language-context'
 import { getTradeProfile } from '@/lib/trade-data'
+import { getAllReports, getReportById, getActiveReport, setActiveReport, BusinessReport } from '@/lib/report-store'
 
-export default function ReportPage() {
+function ReportContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const idFromUrl = searchParams.get('id')
+
   const { language, t } = useLanguage()
   const dossierRef = useRef<HTMLDivElement>(null)
   const [downloading, setDownloading] = useState(false)
-  const [data, setData] = useState({
-    entrepreneur: 'Rajesh Patel',
-    location: 'Tarsali, Savli Block, Vadodara, Gujarat',
-    category: 'Dairy',
-    marginCapital: 100000,
-    marginPercent: 0.10,
-    fundingPercent: 90,
-    projectCost: 1000000,
-    loanAmount: 900000,
-    scheme: 'Term Loan Scheme',
-    interestRate: 8.0,
-    tenureYears: 7,
-    moratoriumMonths: 6,
-    interestWaivedDuringMoratorium: false,
-    emiMonthly: 14025,
-    score: 84,
-    date: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
-  })
+  const [reportsList, setReportsList] = useState<BusinessReport[]>([])
+  const [currentReport, setCurrentReport] = useState<BusinessReport>(() => getActiveReport())
 
-  const trade = getTradeProfile(data.category, language.toLowerCase())
+  // Load reports and set active report based on URL or storage
+  const syncReportData = () => {
+    const all = getAllReports()
+    setReportsList(all)
+
+    let selected: BusinessReport | null = null
+    if (idFromUrl) {
+      selected = getReportById(idFromUrl)
+    }
+
+    if (!selected) {
+      selected = getActiveReport()
+    }
+
+    if (selected) {
+      setCurrentReport(selected)
+      setActiveReport(selected.id)
+    }
+  }
 
   useEffect(() => {
-    let entrepreneurName = 'Rajesh Patel'
-    const userStr = localStorage.getItem('gs_user')
-    if (userStr) {
-      try {
-        const u = JSON.parse(userStr)
-        if (u.name) entrepreneurName = u.name
-      } catch (e) {
-        console.error(e)
-      }
+    syncReportData()
+
+    const handleReportChange = () => {
+      syncReportData()
     }
 
-    const saved = localStorage.getItem('gs_analysis')
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved)
-        setData((prev) => ({
-          ...prev,
-          entrepreneur: entrepreneurName,
-          category: parsed.category || prev.category,
-          location: `${parsed.village ? parsed.village + ', ' : ''}${parsed.block ? parsed.block + ', ' : ''}${parsed.district || 'Vadodara'}, ${parsed.state || 'Gujarat'}`,
-          marginCapital: parsed.marginCapital || prev.marginCapital,
-          marginPercent: parsed.marginPercent || (parsed.projectCost && parsed.marginCapital ? parsed.marginCapital / parsed.projectCost : prev.marginPercent),
-          fundingPercent: parsed.fundingPercent || (parsed.projectCost && parsed.loanAmount ? Math.round((parsed.loanAmount / parsed.projectCost) * 100) : prev.fundingPercent),
-          projectCost: parsed.projectCost || prev.projectCost,
-          loanAmount: parsed.loanAmount || prev.loanAmount,
-          scheme: parsed.scheme === 'micro' ? 'Micro Finance Scheme' : 'Term Loan Scheme',
-          interestRate: parsed.interestRate || prev.interestRate,
-          tenureYears: parsed.tenureYears || prev.tenureYears,
-          moratoriumMonths: parsed.moratoriumMonths || prev.moratoriumMonths,
-          interestWaivedDuringMoratorium: parsed.interestWaivedDuringMoratorium !== undefined ? parsed.interestWaivedDuringMoratorium : prev.interestWaivedDuringMoratorium,
-          emiMonthly: parsed.emiMonthly || prev.emiMonthly,
-          score: parsed.feasibilityScore || prev.score,
-        }))
-      } catch (e) {
-        console.error(e)
-      }
-    } else {
-      setData((prev) => ({ ...prev, entrepreneur: entrepreneurName }))
-    }
-  }, [])
+    window.addEventListener('gs_report_changed', handleReportChange)
+    return () => window.removeEventListener('gs_report_changed', handleReportChange)
+  }, [idFromUrl])
+
+  const handleSwitchReport = (newId: string) => {
+    setActiveReport(newId)
+    router.push(`/report?id=${newId}`)
+  }
+
+  const trade = getTradeProfile(currentReport.category, language.toLowerCase())
 
   // 1-Click Direct Download as real PDF file
   const handleDirectDownload = async () => {
@@ -214,7 +195,9 @@ export default function ReportPage() {
         heightLeft -= pageHeight
       }
 
-      const cleanFileName = `GramSaarthi_Feasibility_Report_${data.category}_${data.entrepreneur.replace(/\s+/g, '_')}.pdf`
+      const cleanCategory = currentReport.category.replace(/\s+/g, '_')
+      const cleanEntrepreneur = currentReport.entrepreneur.replace(/\s+/g, '_')
+      const cleanFileName = `GramSaarthi_Feasibility_Report_${cleanCategory}_${cleanEntrepreneur}.pdf`
       pdf.save(cleanFileName)
     } catch (err) {
       console.error('Direct PDF download error, falling back to window.print():', err)
@@ -229,16 +212,41 @@ export default function ReportPage() {
     <AppShell>
       <div className="max-w-5xl mx-auto space-y-6">
         {/* ACTION BAR */}
-        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 no-print">
+        <div className="bg-white p-4 sm:p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 no-print">
           <div>
-            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
-              {t('report.officialBadge')}
-            </span>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mt-1">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                {t('report.officialBadge')}
+              </span>
+              <span className="text-[11px] font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                DOSSIER #{currentReport.id}
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900">
               {t('report.title')}
             </h1>
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            {/* BUSINESS SWITCHER */}
+            {reportsList.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="text-[11px] text-gray-500 font-semibold hidden sm:inline">Select Dossier:</span>
+                <select
+                  value={currentReport.id}
+                  onChange={(e) => handleSwitchReport(e.target.value)}
+                  className="bg-transparent text-xs font-bold text-gray-800 outline-none cursor-pointer pr-1"
+                >
+                  {reportsList.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.category} ({r.district || 'Vadodara'}) · Score {r.feasibilityScore}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <button
               onClick={handleDirectDownload}
               disabled={downloading}
@@ -254,6 +262,7 @@ export default function ReportPage() {
                 </>
               )}
             </button>
+
             <Link
               href="/chat"
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold text-xs sm:text-sm px-3.5 py-2.5 rounded-xl transition"
@@ -279,9 +288,9 @@ export default function ReportPage() {
               </p>
             </div>
             <div className="text-left sm:text-right text-xs text-gray-600 space-y-1">
-              <div><strong>{t('report.candidate')}:</strong> <span className="font-bold text-emerald-800">{data.entrepreneur}</span></div>
-              <div><strong>{t('report.date')}:</strong> {data.date}</div>
-              <div><strong>{t('report.cluster')}:</strong> {data.location}</div>
+              <div><strong>{t('report.candidate')}:</strong> <span className="font-bold text-emerald-800">{currentReport.entrepreneur}</span></div>
+              <div><strong>{t('report.date')}:</strong> {currentReport.date}</div>
+              <div><strong>{t('report.cluster')}:</strong> {currentReport.location}</div>
             </div>
           </div>
 
@@ -293,10 +302,10 @@ export default function ReportPage() {
                   {t('report.execBadge')}
                 </span>
                 <h3 className="text-xl font-bold mt-2">
-                  {t('report.viableHeading')}: {data.category} ({data.location})
+                  {t('report.viableHeading')}: {currentReport.category} ({currentReport.location})
                 </h3>
                 <p className="text-xs text-emerald-100 mt-2 leading-relaxed">
-                  {t('report.execSummary')} ({data.scheme}).
+                  {t('report.execSummary')} ({currentReport.scheme}).
                 </p>
               </div>
 
@@ -309,7 +318,7 @@ export default function ReportPage() {
 
             <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-col justify-center items-center text-center">
               <span className="text-xs font-bold text-emerald-900 uppercase tracking-wider">{t('report.scoreBadge')}</span>
-              <div className="text-5xl font-black text-emerald-800 my-2">{data.score}</div>
+              <div className="text-5xl font-black text-emerald-800 my-2">{currentReport.feasibilityScore}</div>
               <span className="text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-1 rounded-full">
                 {t('report.highViability')}
               </span>
@@ -325,26 +334,26 @@ export default function ReportPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.ownMargin')}</span>
-                <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.marginCapital.toLocaleString('en-IN')}</p>
+                <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{currentReport.marginCapital.toLocaleString('en-IN')}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{t('report.statutoryCommitment')}</p>
               </div>
 
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.feasibleProject')}</span>
-                <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.projectCost.toLocaleString('en-IN')}</p>
+                <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{currentReport.projectCost.toLocaleString('en-IN')}</p>
                 <p className="text-[10px] text-gray-400 mt-0.5">{t('report.marginMultiplier')}</p>
               </div>
 
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.loanPrincipal')}</span>
-                <p className="text-base font-extrabold text-emerald-800 mt-0.5">₹{data.loanAmount.toLocaleString('en-IN')}</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">{data.scheme}</p>
+                <p className="text-base font-extrabold text-emerald-800 mt-0.5">₹{currentReport.loanAmount.toLocaleString('en-IN')}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{currentReport.scheme}</p>
               </div>
 
               <div className="p-3.5 bg-gray-50 rounded-2xl border border-gray-100">
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{t('report.monthlyEmi')}</span>
-                <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{data.emiMonthly.toLocaleString('en-IN')}</p>
-                <p className="text-[10px] text-gray-400 mt-0.5">{data.interestRate}% p.a. / {data.tenureYears} yrs</p>
+                <p className="text-base font-extrabold text-gray-900 mt-0.5">₹{currentReport.emiMonthly.toLocaleString('en-IN')}</p>
+                <p className="text-[10px] text-gray-400 mt-0.5">{currentReport.interestRate}% p.a. / {currentReport.tenureYears} yrs</p>
               </div>
             </div>
 
@@ -417,11 +426,11 @@ export default function ReportPage() {
               <h4 className="font-bold text-gray-900 text-sm">{t('report.competitorDensity')}</h4>
               <p className="text-xs text-gray-600 leading-relaxed">
                 {language === 'HI' ? (
-                  <><strong>{data.location}</strong> के 5 किमी दायरे में: {trade.competitorDensityDesc}</>
+                  <><strong>{currentReport.location}</strong> के 5 किमी दायरे में: {trade.competitorDensityDesc}</>
                 ) : language === 'GU' ? (
-                  <><strong>{data.location}</strong> ની આસપાસ ૫ કિમી વિસ્તારમાં: {trade.competitorDensityDesc}</>
+                  <><strong>{currentReport.location}</strong> ની આસપાસ ૫ કિમી વિસ્તારમાં: {trade.competitorDensityDesc}</>
                 ) : (
-                  <>Within a 5 km radius of <strong>{data.location}</strong>: {trade.competitorDensityDesc}</>
+                  <>Within a 5 km radius of <strong>{currentReport.location}</strong>: {trade.competitorDensityDesc}</>
                 )}
               </p>
             </div>
@@ -446,5 +455,22 @@ export default function ReportPage() {
         </div>
       </div>
     </AppShell>
+  )
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="max-w-5xl mx-auto p-12 text-center text-gray-500 space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-emerald-700" />
+            <p className="text-sm font-semibold">Loading Feasibility Dossier...</p>
+          </div>
+        </AppShell>
+      }
+    >
+      <ReportContent />
+    </Suspense>
   )
 }

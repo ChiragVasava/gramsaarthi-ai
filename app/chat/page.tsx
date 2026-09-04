@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AppShell from '@/components/layout/AppShell'
 import { 
   Bot, 
@@ -11,9 +11,11 @@ import {
   Languages, 
   User, 
   CheckCircle,
-  HelpCircle
+  HelpCircle,
+  Briefcase
 } from 'lucide-react'
 import { useLanguage, Language } from '@/lib/language-context'
+import { getAllReports, getActiveReport, setActiveReport, BusinessReport } from '@/lib/report-store'
 
 interface Message {
   id: string
@@ -101,8 +103,14 @@ function FormattedMessage({ content, isUser }: { content: string; isUser: boolea
 
 export default function ChatPage() {
   const { language, setLanguage, t } = useLanguage()
+  const [messages, setMessages] = useState<Message[]>([])
+  const [input, setInput] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [isListening, setIsListening] = useState(false)
+  const [reportsList, setReportsList] = useState<BusinessReport[]>([])
+  const [selectedReportId, setSelectedReportId] = useState<string>('')
   const [userProfile, setUserProfile] = useState({
-    name: 'Entrepreneur',
+    name: 'Rajesh Patel',
     category: 'Dairy',
     location: 'Savli, Vadodara, Gujarat',
     marginCapital: 100000,
@@ -110,14 +118,16 @@ export default function ChatPage() {
     loanAmount: 900000,
     score: 84
   })
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [isListening, setIsListening] = useState(false)
+  const syncChatContext = (overrideId?: string) => {
+    const list = getAllReports()
+    setReportsList(list)
 
-  useEffect(() => {
-    let name = 'Entrepreneur'
+    let active = overrideId ? list.find(r => r.id === overrideId) : getActiveReport()
+    if (!active && list.length > 0) active = list[0]
+
+    let name = 'Rajesh Patel'
     const userStr = localStorage.getItem('gs_user')
     if (userStr) {
       try {
@@ -128,55 +138,50 @@ export default function ChatPage() {
       }
     }
 
-    let category = 'Dairy'
-    let location = 'Savli, Vadodara, Gujarat'
-    let margin = 100000
-    let scheme = 'Term Loan Scheme'
-    let loan = 900000
-    let score = 84
+    if (active) {
+      setSelectedReportId(active.id)
+      setUserProfile({
+        name,
+        category: active.category,
+        location: active.location,
+        marginCapital: active.marginCapital,
+        scheme: active.scheme,
+        loanAmount: active.loanAmount,
+        score: active.feasibilityScore
+      })
 
-    const saved = localStorage.getItem('gs_analysis')
-    if (saved) {
-      try {
-        const a = JSON.parse(saved)
-        category = a.category || category
-        const locParts = [a.village, a.block, a.district, a.state].filter(Boolean)
-        if (locParts.length > 0) location = locParts.join(', ')
-        margin = a.marginCapital || margin
-        scheme = a.scheme === 'micro' ? 'Micro Finance Scheme' : 'Term Loan Scheme'
-        loan = a.loanAmount || loan
-        score = a.feasibilityScore || score
-      } catch (e) {
-        console.error(e)
-      }
+      const greetingText = language === 'HI'
+        ? `नमस्ते ${name} जी! 🙏 मैं ग्रामसारथी एआई हूँ, आपका समर्पित ग्रामीण व्यापार सलाहकार। मैंने ${active.location} में आपके प्रस्तावित ${active.category} उद्यम का विवरण देखा है। आपकी ₹${active.marginCapital.toLocaleString('en-IN')} की मार्जिन पूंजी के साथ, आप ₹${active.loanAmount.toLocaleString('en-IN')} के ${active.scheme} के पात्र हैं। आज मैं आपके व्यापार नियोजन या विपणन रणनीति में क्या सहायता कर सकता हूँ?`
+        : language === 'GU'
+          ? `નમસ્તે ${name} ભાઈ/બહેન! 🙏 હું ગ્રામસારથી એઆઈ છું, તમારો ગ્રામીણ બિઝનેસ સલાહકાર. મેં ${active.location} માં તમારા સૂચિત ${active.category} વ્યવસાયની વિગતો ચકાસી છે. તમારી ₹${active.marginCapital.toLocaleString('en-IN')} ની માર્જિન મૂડી સાથે, તમે ₹${active.loanAmount.toLocaleString('en-IN')} ની ${active.scheme} માટે પાત્ર છો. આજે હું તમારા વ્યવસાય આયોજન કે વેચાણ વ્યૂહરચનામાં કેવી રીતે મદદ કરી શકું?`
+          : `Namaste ${name}! 🙏 I am GramSaarthi AI, your dedicated rural enterprise advisor. I have reviewed your proposed ${active.category} Enterprise in ${active.location}. With your ₹${active.marginCapital.toLocaleString('en-IN')} margin capital, you qualify for a ₹${active.loanAmount.toLocaleString('en-IN')} ${active.scheme}. How can I guide your operations, pricing, or government scheme strategy today?`
+
+      setMessages([
+        {
+          id: '1',
+          role: 'assistant',
+          content: greetingText,
+          timestamp: '10:00 AM'
+        }
+      ])
+    }
+  }
+
+  useEffect(() => {
+    syncChatContext()
+
+    const handleReportChange = () => {
+      syncChatContext()
     }
 
-    setUserProfile({
-      name,
-      category,
-      location,
-      marginCapital: margin,
-      scheme,
-      loanAmount: loan,
-      score
-    })
-
-    // Create dynamic initial greeting with actual user's name and business details
-    const greetingText = language === 'HI'
-      ? `नमस्ते ${name} जी! 🙏 मैं ग्रामसारथी एआई हूँ, आपका समर्पित ग्रामीण व्यापार सलाहकार। मैंने ${location} में आपके प्रस्तावित ${category} उद्यम का विवरण देखा है। आपकी ₹${margin.toLocaleString('en-IN')} की मार्जिन पूंजी के साथ, आप ₹${loan.toLocaleString('en-IN')} के ${scheme} के पात्र हैं। आज मैं आपके व्यापार नियोजन या विपणन रणनीति में क्या सहायता कर सकता हूँ?`
-      : language === 'GU'
-        ? `નમસ્તે ${name} ભાઈ/બહેન! 🙏 હું ગ્રામસારથી એઆઈ છું, તમારો ગ્રામીણ બિઝનેસ સલાહકાર. મેં ${location} માં તમારા સૂચિત ${category} વ્યવસાયની વિગતો ચકાસી છે. તમારી ₹${margin.toLocaleString('en-IN')} ની માર્જિન મૂડી સાથે, તમે ₹${loan.toLocaleString('en-IN')} ની ${scheme} માટે પાત્ર છો. આજે હું તમારા વ્યવસાય આયોજન કે વેચાણ વ્યૂહરચનામાં કેવી રીતે મદદ કરી શકું?`
-        : `Namaste ${name}! 🙏 I am GramSaarthi AI, your dedicated rural enterprise advisor. I have reviewed your proposed ${category} Enterprise in ${location}. With your ₹${margin.toLocaleString('en-IN')} margin capital, you qualify for a ₹${loan.toLocaleString('en-IN')} ${scheme}. How can I guide your operations, pricing, or government scheme strategy today?`
-
-    setMessages([
-      {
-        id: '1',
-        role: 'assistant',
-        content: greetingText,
-        timestamp: '10:00 AM'
-      }
-    ])
+    window.addEventListener('gs_report_changed', handleReportChange)
+    return () => window.removeEventListener('gs_report_changed', handleReportChange)
   }, [language])
+
+  const handleSwitchBusiness = (id: string) => {
+    setActiveReport(id)
+    syncChatContext(id)
+  }
 
   const prompts = [
     "What is the best pricing strategy vs local competitors?",
@@ -296,20 +301,40 @@ export default function ChatPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Languages className="w-4 h-4 text-gray-400" />
-            <div className="flex gap-1 text-xs font-bold bg-gray-100 p-1 rounded-xl">
-              {(['EN', 'HI', 'GU'] as Language[]).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLanguage(l)}
-                  className={`px-2 py-1 rounded-lg transition ${
-                    language === l ? 'bg-emerald-700 text-white' : 'text-gray-600 hover:bg-gray-200'
-                  }`}
+          <div className="flex items-center gap-2 flex-wrap">
+            {reportsList.length > 1 && (
+              <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs">
+                <Briefcase className="w-3.5 h-3.5 text-emerald-700" />
+                <span className="font-semibold text-gray-500 hidden sm:inline">Active Business:</span>
+                <select
+                  value={selectedReportId}
+                  onChange={(e) => handleSwitchBusiness(e.target.value)}
+                  className="bg-transparent font-bold text-gray-900 outline-none cursor-pointer text-xs"
                 >
-                  {l}
-                </button>
-              ))}
+                  {reportsList.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.category} ({r.district || 'Vadodara'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="flex items-center gap-1">
+              <Languages className="w-4 h-4 text-gray-400 mr-1" />
+              <div className="flex gap-1 text-xs font-bold bg-gray-100 p-1 rounded-xl">
+                {(['EN', 'HI', 'GU'] as Language[]).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLanguage(l)}
+                    className={`px-2 py-1 rounded-lg transition ${
+                      language === l ? 'bg-emerald-700 text-white' : 'text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>

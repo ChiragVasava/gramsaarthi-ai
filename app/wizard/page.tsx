@@ -16,6 +16,7 @@ import {
   Info
 } from 'lucide-react'
 import { calculateFinancials } from '@/lib/financial-engine'
+import { saveNewReport } from '@/lib/report-store'
 
 export default function WizardPage() {
   const router = useRouter()
@@ -61,30 +62,33 @@ export default function WizardPage() {
     // Run deterministic financial engine with applicant category
     const fin = calculateFinancials(formData.marginCapital, { category: formData.applicantCategory })
 
-    // Construct unified analysis state
-    const analysisPayload = {
-      ...formData,
+    // Save report into persistent multi-business report store & database
+    const savedReport = saveNewReport({
+      category: formData.category,
+      state: formData.state,
+      district: formData.district,
+      block: formData.block,
+      village: formData.village,
+      experience: formData.experience,
+      distribution: formData.targetAudience,
+      applicantCategory: formData.applicantCategory,
+      marginCapital: formData.marginCapital,
       projectCost: fin.projectCost,
       loanAmount: fin.loanAmount,
       marginPercent: fin.marginPercent,
       fundingPercent: fin.fundingPercent,
-      scheme: fin.schemeCode,
+      scheme: fin.schemeCode === 'micro' ? 'Micro Finance Scheme' : 'Term Loan Scheme',
       interestRate: fin.interestRate,
       tenureYears: fin.tenureYears,
       moratoriumMonths: fin.moratoriumMonths,
       interestWaivedDuringMoratorium: fin.interestWaivedDuringMoratorium,
       emiMonthly: fin.emiMonthly,
-      feasibilityScore: formData.category === 'Dairy' ? 84 : 78,
-      status: 'completed',
-      generatedAt: new Date().toISOString()
-    }
-
-    localStorage.setItem('gs_analysis', JSON.stringify(analysisPayload))
+    })
 
     setTimeout(() => {
       setLoading(false)
-      router.push('/report')
-    }, 1200)
+      router.push(`/report?id=${savedReport.id}`)
+    }, 1000)
   }
 
   return (

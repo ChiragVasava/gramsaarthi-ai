@@ -23,6 +23,7 @@ All features across the application were manually verified via an autonomous bro
 | **Calculator (`/calculator`)** | Statutory Scheme Boundary Test | Selected equity `₹50,000` preset | Instantly recalculated: **₹5,00,000** Project Cost, **₹4,50,000** Loan, **₹7,417/mo** EMI, 8% p.a., 7 Years tenure, and 6 Months Moratorium. | **PASSED** ✅ |
 | **Direct PDF Export (`/report`)** | 1-Click Client-Side PDF Generation | Clicked **"Download Official PDF"** | Intercepted global and iframe `window.getComputedStyle` color space tokens (`lab(...)`, `oklch(...)`) converting them dynamically to standard RGBA via offscreen Canvas2D. Generated and directly downloaded `GramSaarthi_Feasibility_Report_<Category>_<Name>.pdf` without `unsupported color function "lab"` error or print modal fallback. | **PASSED** ✅ |
 | **Dossier Registry (`/reports`)** | Custom Analysis Persistence | Checked saved reports index | **GS-ACTIVE-APPRAISAL** displayed at top with `Score: 78/100` and `₹5,00,000` project size. | **PASSED** ✅ |
+| **Multi-Enterprise Dossiers & Cross-App Switching** | Multi-Report Management & Real-Time Sync | Created multiple businesses (Dairy, Flour Milling, etc.) | Each business maintains its unique ID, real financials, SWOT, and catchment. `/reports` renders separate interactive dossiers linking directly to `/report?id=...`. The Business Switcher in Dashboard, Report, Map, Calculator, and Chat toggles context seamlessly in real-time. | **PASSED** ✅ |
 
 ---
 
