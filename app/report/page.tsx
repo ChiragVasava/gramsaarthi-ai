@@ -94,6 +94,70 @@ export default function ReportPage() {
   const handleDirectDownload = async () => {
     if (!dossierRef.current) return
     setDownloading(true)
+
+    // Reusable canvas context for exact browser color space -> RGBA conversion
+    const colorCanvas = typeof window !== 'undefined' ? document.createElement('canvas') : null
+    if (colorCanvas) {
+      colorCanvas.width = 1
+      colorCanvas.height = 1
+    }
+    const colorCtx = colorCanvas ? colorCanvas.getContext('2d', { willReadFrequently: true }) : null
+
+    const convertColorStr = (str: string): string => {
+      if (!str || typeof str !== 'string') return str
+      if (!/(?:lab|oklch|lch|oklab|color)\([^)]+\)/i.test(str)) {
+        return str
+      }
+      return str.replace(/(?:lab|oklch|lch|oklab|color)\([^)]+\)/gi, (match) => {
+        try {
+          if (!colorCtx) return 'rgb(0, 0, 0)'
+          colorCtx.clearRect(0, 0, 1, 1)
+          colorCtx.fillStyle = '#000000'
+          colorCtx.fillStyle = match
+          colorCtx.fillRect(0, 0, 1, 1)
+          const data = colorCtx.getImageData(0, 0, 1, 1).data
+          const r = data[0]
+          const g = data[1]
+          const b = data[2]
+          const a = +(data[3] / 255).toFixed(3)
+          return a === 1 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${a})`
+        } catch {
+          return 'rgba(0, 0, 0, 0.5)'
+        }
+      })
+    }
+
+    const wrapComputedStyle = (origFn: typeof window.getComputedStyle) => {
+      return function (el: Element, pseudo?: string | null) {
+        const style = origFn(el, pseudo)
+        return new Proxy(style, {
+          get(target, prop: string | symbol) {
+            if (typeof prop !== 'string') {
+              return (target as any)[prop]
+            }
+            if (prop === 'getPropertyValue') {
+              return (name: string) => {
+                const val = target.getPropertyValue(name)
+                return convertColorStr(val)
+              }
+            }
+            const val = (target as any)[prop]
+            if (typeof val === 'function') {
+              return val.bind(target)
+            }
+            if (typeof val === 'string') {
+              return convertColorStr(val)
+            }
+            return val
+          },
+        })
+      }
+    }
+
+    // Intercept top-level window.getComputedStyle globally during html2canvas run
+    const origWindowGetComputedStyle = window.getComputedStyle
+    window.getComputedStyle = wrapComputedStyle(origWindowGetComputedStyle)
+
     try {
       const html2canvas = (await import('html2canvas')).default
       const { jsPDF } = await import('jspdf')
@@ -102,7 +166,34 @@ export default function ReportPage() {
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          if (clonedDoc.defaultView) {
+            const origClonedGet = clonedDoc.defaultView.getComputedStyle.bind(clonedDoc.defaultView)
+            clonedDoc.defaultView.getComputedStyle = wrapComputedStyle(origClonedGet)
+          }
+
+          if (clonedDoc.documentElement) {
+            clonedDoc.documentElement.style.backgroundColor = '#ffffff'
+          }
+          if (clonedDoc.body) {
+            clonedDoc.body.style.backgroundColor = '#ffffff'
+          }
+
+          // Also convert inline styles on all cloned nodes
+          const allElements = clonedDoc.querySelectorAll('*')
+          allElements.forEach((node) => {
+            const el = node as HTMLElement
+            if (!el.style) return
+            for (let i = 0; i < el.style.length; i++) {
+              const p = el.style[i]
+              const v = el.style.getPropertyValue(p)
+              if (v && /(?:lab|oklch|lch|oklab|color)\([^)]+\)/i.test(v)) {
+                el.style.setProperty(p, convertColorStr(v), 'important')
+              }
+            }
+          })
+        },
       })
 
       const imgData = canvas.toDataURL('image/png')
@@ -129,6 +220,7 @@ export default function ReportPage() {
       console.error('Direct PDF download error, falling back to window.print():', err)
       window.print()
     } finally {
+      window.getComputedStyle = origWindowGetComputedStyle
       setDownloading(false)
     }
   }

@@ -21,6 +21,7 @@ All features across the application were manually verified via an autonomous bro
 | **AI Advisor Guardrails** | Off-topic query rejection | **Query:** *"write a python code for binary search"* | Strictly and politely refused to answer; guided user back to rural enterprise and government loan topics. | **PASSED** ✅ |
 | **Spatial Map (`/map`)** | 5 km & 10 km Catchment Nodes | Filtered by **Mandi / Weekly Haat** | Concentric radial rings rendered around **Dediapada, Narmada** for **Food Processing**. | **PASSED** ✅ |
 | **Calculator (`/calculator`)** | Statutory Scheme Boundary Test | Selected equity `₹50,000` preset | Instantly recalculated: **₹5,00,000** Project Cost, **₹4,50,000** Loan, **₹7,417/mo** EMI, 8% p.a., 7 Years tenure, and 6 Months Moratorium. | **PASSED** ✅ |
+| **Direct PDF Export (`/report`)** | 1-Click Client-Side PDF Generation | Clicked **"Download Official PDF"** | Intercepted global and iframe `window.getComputedStyle` color space tokens (`lab(...)`, `oklch(...)`) converting them dynamically to standard RGBA via offscreen Canvas2D. Generated and directly downloaded `GramSaarthi_Feasibility_Report_<Category>_<Name>.pdf` without `unsupported color function "lab"` error or print modal fallback. | **PASSED** ✅ |
 | **Dossier Registry (`/reports`)** | Custom Analysis Persistence | Checked saved reports index | **GS-ACTIVE-APPRAISAL** displayed at top with `Score: 78/100` and `₹5,00,000` project size. | **PASSED** ✅ |
 
 ---
