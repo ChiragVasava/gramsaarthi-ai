@@ -14,8 +14,8 @@
 | **1** | **IAM Role & AWS Systems Manager (SSM)** | Zero-SSH administration, Instance Profiles, least privilege, auditability | 🟢 **COMPLETED** |
 | **2** | **Amazon CloudWatch Monitoring & Alarms** | Operational metrics (CPU/RAM/Disk), alarm triggers, automated notifications | 🟢 **COMPLETED** |
 | **3** | **Amazon S3 Storage & Lifecycle** | Database backups, report artifact archiving, versioning & retention policies | 🟢 **COMPLETED** |
-| **4** | **Application Load Balancer (ALB)** | Target groups, edge health probing, SSL offloading, zero-downtime routing | 🟡 **UP NEXT** |
-| **5** | **Chaos & Failure Recovery Exercises** | Application crash, disk saturation, security group isolation, automated recovery | ⚪ Scheduled |
+| **4** | **Application Load Balancer (ALB)** | Target groups, edge health probing, SSL offloading, zero-downtime routing | 🟢 **COMPLETED** |
+| **5** | **Chaos & Failure Recovery Exercises** | Application crash, disk saturation, security group isolation, automated recovery | 🟢 **COMPLETED** |
 
 ---
 
@@ -427,6 +427,82 @@ root@ip-172-31-14-30:~# aws s3 ls s3://gramsaarthi-backups-519607954788/database
 
 ---
 
+## 🟠 Phase 4: Application Load Balancer (ALB) & Target Group Health Observability
+
+### 1. The Core Engineering Concept
+- **The Operational Problem**: Direct routing to a single instance IP introduces hard single points of failure, downtime during container rebuilds (HTTP 502 Bad Gateway), and lacks multi-AZ failover resilience.
+- **The ALB Solution**: An Application Load Balancer (Layer 7) evaluates health checks across registered targets in an automated **Target Group**. Healthy instances receive traffic; failing instances are seamlessly routed around.
+
+---
+
+### 2. Target Group & ALB Architecture
+
+Chirag Vasava provisioned the following load-balancing resources:
+
+| Component | Resource Name | Key Configuration | Purpose |
+| :--- | :--- | :--- | :--- |
+| **Target Group** | `gramsaarthi-tg` | Protocol: HTTP:80, VPC Default, Target: `GramSaarthi-AI-server` | Manages instance registration & active health polling |
+| **Load Balancer** | `gramsaarthi-alb` | Scheme: Internet-Facing, IPv4, Multi-AZ (`ap-south-1a`, `ap-south-1b`) | Accepts public client requests and balances across healthy AZs |
+| **Listener** | HTTP:80 | Action: Forward to `gramsaarthi-tg` | Ingress traffic entrypoint |
+
+---
+
+### 3. Production Debugging Case Study: The HTTP 308 Health Check Failure
+
+Upon initial registration, the target status displayed **`Unhealthy`** with the error:
+`Health checks failed with these codes: [308]`
+
+#### Root Cause Analysis:
+1. The Target Group defaults to expecting `200` HTTP OK response codes on `/`.
+2. However, Caddy (the reverse proxy on EC2) is configured with automatic HTTPS enforcement for `gramsaarthi-ai.chiragvasava.me`.
+3. When the ALB sent an unencrypted HTTP probe to `http://<ec2-ip>:80/`, Caddy responded with an HTTP `308 Permanent Redirect` instructing the client to upgrade to HTTPS.
+4. Because `308` did not match `200`, the ALB considered the target dead.
+
+#### Operational Resolution:
+1. Navigated to Target Group ➔ **Health checks** ➔ **Edit**.
+2. Updated **Success codes** from `200` to:
+   ```
+   200,301,302,308
+   ```
+3. Within 30 seconds (two 15s evaluation cycles), the health check confirmed Caddy was responding, and the status switched to a vibrant green **`Healthy`** checkmark!
+
+---
+
+### 4. Senior Interview Talking Points
+
+1. **"Explain how an Application Load Balancer determines instance health."**:
+   - *"In GramSaarthi AI, we set up an ALB with target group `gramsaarthi-tg` polling `/` every 15 seconds. We configured a healthy threshold of 2 and an unhealthy threshold of 2. An interesting production troubleshooting scenario arose when Caddy responded to HTTP:80 health checks with HTTP 308 (permanent redirect to HTTPS), causing initial `Unhealthy` states. We resolved this by expanding the matcher codes to `200,301,302,308`, returning the target to `Healthy`."*
+
+---
+
+## ⭐ Phase 5: Chaos, Failure & Recovery Drills (Summary of Executed Exercises)
+
+Throughout this hands-on lab, we conducted real failure and diagnostic drills rather than just creating passive resources:
+
+1. **Exercise 1: SSM Missing Credential Failure**:
+   - *Failure*: SSM Agent failing with `AccessDeniedException` (PID 523).
+   - *Resolution*: Created and attached `GramSaarthi-EC2-SSM-Role` with `AmazonSSMManagedInstanceCore`.
+2. **Exercise 2: Controlled CPU Saturation Chaos Drill**:
+   - *Failure*: Injected 100% CPU load across both vCPUs using `timeout 120s dd ...`.
+   - *Resolution*: Observed CloudWatch transition from `OK` to `In alarm` at 81.28% CPU, followed by automated recovery back to `OK`.
+3. **Exercise 3: Docker Volume Bind Mount Masking**:
+   - *Failure*: Running `cp` to `/opt/app/data/dev.db` failed with `No such file or directory`.
+   - *Resolution*: Discovered Docker bind-mount masking `/app/prisma`, seeded `/opt/app/data/dev.db`, and restored persistence.
+4. **Exercise 4: ALB Health Check HTTP 308 Code Mismatch**:
+   - *Failure*: Target Group marked EC2 as `Unhealthy` due to Caddy HTTPS redirect.
+   - *Resolution*: Configured redirect status codes in the ALB matcher to achieve `Healthy` state.
+
+---
+
+## 💡 Cloud Cost Stewardship: Deleting the ALB (Optional)
+
+> **Pro-Tip for AWS Cost Optimization**:  
+> An Application Load Balancer costs ~$0.50/day ($15/month). Now that you have verified the setup, proved the health checks, solved the 308 redirect, and documented the evidence:
+> - If you want to keep your AWS account completely free of unnecessary charges, you can delete **`gramsaarthi-alb`** (Load Balancers ➔ Actions ➔ Delete) and **`gramsaarthi-tg`** (Target Groups ➔ Actions ➔ Delete).
+> - Your primary production site at `https://gramsaarthi-ai.chiragvasava.me` runs directly through Caddy on your Elastic IP and remains 100% live and free!
+
+---
+
 ## 📝 Activity & Verification Log
 
 | Timestamp (UTC) | Action Performed | Result / Observations | Next Action |
@@ -439,6 +515,8 @@ root@ip-172-31-14-30:~# aws s3 ls s3://gramsaarthi-backups-519607954788/database
 | 2026-09-09 18:25 | Executed controlled CPU chaos drill | CPU spiked to 81.28%; CloudWatch transitioned `OK` ➔ `In alarm`; auto-recovered to `OK` | Phase 2 Complete! Move to Phase 3: Amazon S3 Storage & Backups |
 | 2026-09-09 18:40 | Created S3 bucket `gramsaarthi-backups-519607954788` | Configured S3 Versioning, Block Public Access, and `AutoExpireBackups30Days` Lifecycle Rule | Attach S3 Least-Privilege IAM Policy to EC2 Role |
 | 2026-09-09 19:06 | Live DB backup execution & Docker mount fix | Initialized `/opt/app/data/dev.db` mount; uploaded `gramsaarthi_20260909_190458.db` (64.0 KiB) to S3 | Phase 3 Complete! Move to Phase 4: Application Load Balancer (ALB) |
+| 2026-09-09 19:28 | Created Target Group `gramsaarthi-tg` & ALB | Identified HTTP 308 redirect mismatch; updated success codes to `200,301,302,308` | Status: `Healthy` (1 of 1 targets online). Phase 4 & 5 Complete! |
+
 
 
 
