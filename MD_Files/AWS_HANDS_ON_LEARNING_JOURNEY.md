@@ -10,11 +10,11 @@
 ## 🗺️ Master Hands-On Roadmap
 
 | Phase | Milestone | Focus Areas | Status |
-| :---: | :--- | :--- | :---: |
+| :---: | :--- | :--- | :--- :--- |
 | **1** | **IAM Role & AWS Systems Manager (SSM)** | Zero-SSH administration, Instance Profiles, least privilege, auditability | 🟢 **COMPLETED** |
 | **2** | **Amazon CloudWatch Monitoring & Alarms** | Operational metrics (CPU/RAM/Disk), alarm triggers, automated notifications | 🟢 **COMPLETED** |
-| **3** | **Amazon S3 Storage & Lifecycle** | Database backups, report artifact archiving, versioning & retention policies | 🟡 **UP NEXT** |
-| **4** | **Application Load Balancer (ALB)** | Target groups, edge health probing, SSL offloading, zero-downtime routing | ⚪ Scheduled |
+| **3** | **Amazon S3 Storage & Lifecycle** | Database backups, report artifact archiving, versioning & retention policies | 🟢 **COMPLETED** |
+| **4** | **Application Load Balancer (ALB)** | Target groups, edge health probing, SSL offloading, zero-downtime routing | 🟡 **UP NEXT** |
 | **5** | **Chaos & Failure Recovery Exercises** | Application crash, disk saturation, security group isolation, automated recovery | ⚪ Scheduled |
 
 ---
@@ -321,6 +321,112 @@ Within 90 seconds of initiating the drill, CloudWatch evaluated the 1-minute per
 
 ---
 
+## 🥉 Phase 3: Amazon S3 Cloud Storage, Versioning & Automated Cloud Backups
+
+### 1. The Core Engineering Concept
+- **The Operational Problem**: Storing business data and reports solely on an EC2 instance's EBS volume introduces a Single Point of Failure (SPOF). Volume corruption, disk saturation, or accidental termination results in permanent data loss.
+- **The S3 Solution**: Amazon Simple Storage Service (S3) provides 99.999999999% (11 9's) durability. Integrating S3 with IAM Instance Profiles enables automated off-site database replication without storing static AWS API keys on disk.
+
+---
+
+### 2. S3 Bucket & Security Architecture
+
+Chirag Vasava created and configured the production backup bucket:
+
+| Attribute | Configured Value | Security & Operational Purpose |
+| :--- | :--- | :--- |
+| **Bucket Name** | `gramsaarthi-backups-519607954788` | Globally unique namespace incorporating AWS Account ID |
+| **AWS Region** | `ap-south-1` (Mumbai) | Co-located with EC2 to eliminate cross-region latency & data egress fees |
+| **Public Access** | **Block All Public Access: Enabled** | Restricts all object access to internal authenticated IAM identities |
+| **Versioning** | **Enabled** | Preserves prior versions of database snapshots upon overwrite or delete |
+| **Encryption** | SSE-S3 (AES-256) | Automated at-rest encryption managed by AWS |
+
+---
+
+### 3. Automated Cost Governance: S3 Lifecycle Rule
+
+To prevent infinite accumulation of backup snapshots, a lifecycle policy was configured:
+- **Rule Name**: `AutoExpireBackups30Days`
+- **Current Version Expiration**: Objects automatically expire and are deleted **30 days** after creation.
+- **Noncurrent Version Expiration**: Old overwritten versions are permanently expunged after **14 days**.
+- **Financial Benefit**: Guarantees storage usage remains strictly bounded, preventing surprise AWS bills.
+
+---
+
+### 4. Least-Privilege IAM Policy (`GramSaarthi-S3-Backup-Policy`)
+
+An inline policy was attached to `GramSaarthi-EC2-SSM-Role` restricting permissions strictly to the backup bucket ARN:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "GramSaarthiS3BackupAccess",
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::gramsaarthi-backups-519607954788",
+                "arn:aws:s3:::gramsaarthi-backups-519607954788/*"
+            ]
+        }
+    ]
+}
+```
+
+---
+
+### 5. Production Debugging Case Study: The Docker Bind Mount Discovery
+
+During initial backup execution, running `cp /opt/app/data/dev.db` returned `No such file or directory`.
+
+#### Diagnostic Investigation:
+1. Running `find /opt/app -name "*.db"` located the real database at `/opt/app/prisma/dev.db` (64 KB).
+2. Running `docker inspect gramsaarthi-app` revealed the bind mount:
+   `"Source": "/opt/app/data", "Destination": "/app/prisma"`
+3. Running `docker exec gramsaarthi-app ls -la /app/prisma` revealed that the container was seeing an empty directory because host `/opt/app/data` had not been initialized with the seeded database file!
+
+#### Operational Resolution:
+1. Copied seeded database to the volume mount point: `cp /opt/app/prisma/dev.db /opt/app/data/dev.db`.
+2. Granted read/write permissions for container UID 1001: `chmod 666 /opt/app/data/dev.db`.
+3. Verified container mount now reflects `dev.db (64.0K)`.
+
+---
+
+### 6. Live S3 Cloud Upload Verification
+
+Executed from Systems Manager Session Manager shell:
+
+```bash
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+cp /opt/app/prisma/dev.db /opt/app/backups/gramsaarthi_${TIMESTAMP}.db
+aws s3 cp /opt/app/backups/gramsaarthi_${TIMESTAMP}.db s3://gramsaarthi-backups-519607954788/database/
+```
+
+#### Output Captured:
+```text
+upload: ../opt/app/backups/gramsaarthi_20260909_190458.db to s3://gramsaarthi-backups-519607954788/database/gramsaarthi_20260909_190458.db
+
+# S3 Verification:
+root@ip-172-31-14-30:~# aws s3 ls s3://gramsaarthi-backups-519607954788/database/ --human-readable
+2026-09-09 19:06:41   64.0 KiB gramsaarthi_20260909_190458.db
+```
+
+---
+
+### 7. Senior Interview Talking Points
+
+1. **"How do you handle backups in cloud environments?"**:
+   - *"In GramSaarthi AI, we implemented automated database snapshots to an encrypted S3 bucket in the same region (`ap-south-1`). We enforced least-privilege IAM policies on the EC2 instance profile, scoping permissions strictly to the backup bucket ARN. To manage storage lifecycle costs, we configured S3 Lifecycle rules that automatically expire current backups after 30 days and clean up noncurrent versions after 14 days."*
+2. **"How did you secure credentials for S3 uploads?"**:
+   - *"We completely avoided static AWS Access Keys (`~/.aws/credentials`). Instead, we attached an inline IAM policy to the EC2 Instance Profile (`GramSaarthi-EC2-SSM-Role`), allowing the AWS CLI and internal scripts to leverage temporary STS credentials via IMDSv2."*
+
+---
+
 ## 📝 Activity & Verification Log
 
 | Timestamp (UTC) | Action Performed | Result / Observations | Next Action |
@@ -331,6 +437,9 @@ Within 90 seconds of initiating the drill, CloudWatch evaluated the 1-minute per
 | 2026-09-09 17:48 | Executed 5-part production diagnostics | Identified: dockerd 36.8% RAM, Caddy ACME active, 7.09GB Docker Build Cache, zero inbound ports for SSM | Phase 1 Complete! Move to Phase 2: CloudWatch Metrics & Alarms |
 | 2026-09-09 18:13 | User created CloudWatch Alarm `GramSaarthi-High-CPU-Alarm` | Monitored `CPUUtilization` on `i-03f0117fc63136563`; threshold > 60% (1m period); initial state = `OK` | Proceed to Controlled CPU Stress Test |
 | 2026-09-09 18:25 | Executed controlled CPU chaos drill | CPU spiked to 81.28%; CloudWatch transitioned `OK` ➔ `In alarm`; auto-recovered to `OK` | Phase 2 Complete! Move to Phase 3: Amazon S3 Storage & Backups |
+| 2026-09-09 18:40 | Created S3 bucket `gramsaarthi-backups-519607954788` | Configured S3 Versioning, Block Public Access, and `AutoExpireBackups30Days` Lifecycle Rule | Attach S3 Least-Privilege IAM Policy to EC2 Role |
+| 2026-09-09 19:06 | Live DB backup execution & Docker mount fix | Initialized `/opt/app/data/dev.db` mount; uploaded `gramsaarthi_20260909_190458.db` (64.0 KiB) to S3 | Phase 3 Complete! Move to Phase 4: Application Load Balancer (ALB) |
+
 
 
 
