@@ -11,7 +11,7 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=file:/app/prisma/dev.db
       - NEXTAUTH_SECRET=gramsaarthi-ai-hackathon-2026-secret
-      - NEXTAUTH_URL=https://aws.chiragvasava.me
+      - NEXTAUTH_URL=https://gramsaarthi-ai.chiragvasava.me
     volumes:
       # Mount SQLite directory to host disk for data persistence across container restarts
       - ./data:/app/prisma

@@ -13,10 +13,10 @@ concurrency:
 
 jobs:
   # =========================================================================
-  # 1. CONTINUOUS INTEGRATION (CI): Test, Validate & Build
+  # 1. CONTINUOUS INTEGRATION (CI): Type-Check, Test & Build Application
   # =========================================================================
   ci:
-    name: Build & Test (CI)
+    name: Application Test & Build (CI)
     runs-on: ubuntu-latest
 
     steps:
@@ -35,7 +35,10 @@ jobs:
       - name: 🗄️ Generate Prisma Client
         run: npx prisma generate
 
-      - name: 🧪 Run Automated Financial Engine Tests
+      - name: 🔍 TypeScript Static Type Checking
+        run: npx tsc --noEmit
+
+      - name: 🧪 Run Core Domain & Financial Engine Tests
         run: npm test
 
       - name: 🏗️ Build Next.js Production Application
@@ -45,14 +48,31 @@ jobs:
           NEXT_TELEMETRY_DISABLED: 1
           DATABASE_URL: "file:./prisma/dev.db"
           NEXTAUTH_SECRET: "ci-build-placeholder-secret"
-          NEXTAUTH_URL: "http://localhost:3000"
+          NEXTAUTH_URL: "https://gramsaarthi-ai.chiragvasava.me"
 
   # =========================================================================
-  # 2. CONTINUOUS DEPLOYMENT (CD): Deploy to AWS EC2 via SSH
+  # 2. INFRASTRUCTURE AS CODE (IaC): Terraform Formatting & Syntax Check
+  # =========================================================================
+  terraform-check:
+    name: Terraform IaC Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: 🔍 Check Terraform Formatting
+        run: terraform -chdir=terraform fmt -check
+
+  # =========================================================================
+  # 3. CONTINUOUS DEPLOYMENT (CD): Deploy to AWS EC2 & Smoke Test
   # =========================================================================
   deploy:
     name: Deploy to AWS EC2 (CD)
-    needs: ci
+    needs: [ci, terraform-check]
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
 
@@ -84,16 +104,22 @@ jobs:
             docker image prune -f
 
             echo "⏳ Waiting for Next.js service to initialize..."
-            sleep 8
+            sleep 10
 
-            echo "🩺 Running local health check..."
+            echo "🩺 Running local container health check (localhost:3000)..."
             curl -f -s -o /dev/null http://localhost:3000/ || {
-              echo "❌ Health check failed! Printing container logs:"
+              echo "❌ Local health check failed! Printing container logs:"
               docker compose logs --tail=40
               exit 1
             }
 
+            echo "🌐 Verifying live AWS domain (https://gramsaarthi-ai.chiragvasava.me)..."
+            curl -f -s -o /dev/null https://gramsaarthi-ai.chiragvasava.me/ || {
+              echo "⚠️ Notice: Caddy reverse proxy or DNS might need a few seconds."
+            }
+
             echo "============================================================"
             echo "✅ Deployment Successful! GramSaarthi AI is live."
-            echo "🌐 Production URL: https://aws.chiragvasava.me"
+            echo "🌐 AWS Production URL:    https://gramsaarthi-ai.chiragvasava.me"
+            echo "🌐 Vercel Production URL: https://gramsaarthi.chiragvasava.me"
             echo "============================================================"
