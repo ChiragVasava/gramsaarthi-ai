@@ -104,18 +104,33 @@ jobs:
             docker image prune -f
 
             echo "⏳ Waiting for Next.js service to initialize..."
-            sleep 10
+            sleep 20
 
             echo "🩺 Running local container health check (localhost:3000)..."
-            curl -f -s -o /dev/null http://localhost:3000/ || {
-              echo "❌ Local health check failed! Printing container logs:"
-              docker compose logs --tail=40
+            MAX_ATTEMPTS=8
+            ATTEMPT=1
+            PASSED=false
+
+            while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+              if curl -f -s -o /dev/null http://localhost:3000/; then
+                echo "✅ Health check passed on attempt $ATTEMPT!"
+                PASSED=true
+                break
+              fi
+              echo "⏳ Health check attempt $ATTEMPT/$MAX_ATTEMPTS pending, retrying in 5 seconds..."
+              sleep 5
+              ATTEMPT=$((ATTEMPT + 1))
+            done
+
+            if [ "$PASSED" != "true" ]; then
+              echo "❌ Local health check failed after $MAX_ATTEMPTS attempts! Printing container logs:"
+              docker compose logs --tail=50
               exit 1
-            }
+            fi
 
             echo "🌐 Verifying live AWS domain (https://gramsaarthi-ai.chiragvasava.me)..."
             curl -f -s -o /dev/null https://gramsaarthi-ai.chiragvasava.me/ || {
-              echo "⚠️ Notice: Caddy reverse proxy or DNS might need a few seconds."
+              echo "⚠️ Notice: Caddy reverse proxy or DNS might need a few moments to route."
             }
 
             echo "============================================================"
