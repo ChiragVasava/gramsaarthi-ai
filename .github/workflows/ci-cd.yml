@@ -1,0 +1,99 @@
+name: GramSaarthi AI CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # =========================================================================
+  # 1. CONTINUOUS INTEGRATION (CI): Test, Validate & Build
+  # =========================================================================
+  ci:
+    name: Build & Test (CI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Check out repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🗄️ Generate Prisma Client
+        run: npx prisma generate
+
+      - name: 🧪 Run Automated Financial Engine Tests
+        run: npm test
+
+      - name: 🏗️ Build Next.js Production Application
+        run: npm run build
+        env:
+          NODE_ENV: production
+          NEXT_TELEMETRY_DISABLED: 1
+          DATABASE_URL: "file:./prisma/dev.db"
+          NEXTAUTH_SECRET: "ci-build-placeholder-secret"
+          NEXTAUTH_URL: "http://localhost:3000"
+
+  # =========================================================================
+  # 2. CONTINUOUS DEPLOYMENT (CD): Deploy to AWS EC2 via SSH
+  # =========================================================================
+  deploy:
+    name: Deploy to AWS EC2 (CD)
+    needs: ci
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚀 SSH into AWS EC2 and Deploy Application
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            echo "============================================================"
+            echo "🚀 Starting Automated Deployment for GramSaarthi AI on AWS"
+            echo "============================================================"
+
+            cd /opt/app
+
+            echo "📥 Fetching latest code from origin/main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🐳 Building & restarting production Docker containers..."
+            docker compose down
+            docker compose up -d --build
+
+            echo "🧹 Pruning dangling docker images to save disk space..."
+            docker image prune -f
+
+            echo "⏳ Waiting for Next.js service to initialize..."
+            sleep 8
+
+            echo "🩺 Running local health check..."
+            curl -f -s -o /dev/null http://localhost:3000/ || {
+              echo "❌ Health check failed! Printing container logs:"
+              docker compose logs --tail=40
+              exit 1
+            }
+
+            echo "============================================================"
+            echo "✅ Deployment Successful! GramSaarthi AI is live."
+            echo "🌐 Production URL: https://aws.chiragvasava.me"
+            echo "============================================================"
