@@ -11,11 +11,69 @@
 
 | Phase | Milestone | Focus Areas | Status |
 | :---: | :--- | :--- | :--- :--- |
+| **0** | **Automated CI/CD Pipeline (GitHub Actions)** | Static type-checking, unit tests, Next.js build, Terraform IaC, Docker EC2 deploy | 🟢 **COMPLETED** |
 | **1** | **IAM Role & AWS Systems Manager (SSM)** | Zero-SSH administration, Instance Profiles, least privilege, auditability | 🟢 **COMPLETED** |
 | **2** | **Amazon CloudWatch Monitoring & Alarms** | Operational metrics (CPU/RAM/Disk), alarm triggers, automated notifications | 🟢 **COMPLETED** |
 | **3** | **Amazon S3 Storage & Lifecycle** | Database backups, report artifact archiving, versioning & retention policies | 🟢 **COMPLETED** |
 | **4** | **Application Load Balancer (ALB)** | Target groups, edge health probing, SSL offloading, zero-downtime routing | 🟢 **COMPLETED** |
 | **5** | **Chaos & Failure Recovery Exercises** | Application crash, disk saturation, security group isolation, automated recovery | 🟢 **COMPLETED** |
+
+---
+
+## 🚀 Phase 0: Automated CI/CD Pipeline & The "Exit Status 56" Resolution
+
+### 1. The Core Engineering Concept
+- **The Operational Problem**: Manually SSHing into an EC2 server to pull git commits, build Docker containers, and test changes is error-prone, lacks automated guardrails, and risks pushing broken code directly to production.
+- **The GitHub Actions Solution**: We built a complete, multi-stage CI/CD pipeline in [`.github/workflows/ci-cd.yml`](file:///c:/Users/Chirag%20Vasava/Downloads/Personal/College/MSU/Hackathone/MSU%20Hack-A-Throne%202026/gramsaarthi-ai/.github/workflows/ci-cd.yml):
+  1. **Continuous Integration (CI)**: Checks out code, sets up Node.js 20 with cache, runs `npx prisma generate`, performs strict TypeScript static type-checking (`npx tsc --noEmit`), runs core financial & trade domain unit tests (`npm test`), and builds the Next.js production bundle (`npm run build`).
+  2. **Infrastructure as Code (IaC) Validation**: Verifies that all `.tf` files in `terraform/` are cleanly formatted and valid via `terraform fmt -check`.
+  3. **Continuous Deployment (CD)**: Automatically triggers on push to `main` (only after CI passes), connects to AWS EC2 via `appleboy/ssh-action@v1.2.0`, updates `/opt/app`, triggers `docker compose down && docker compose up -d --build`, and performs housekeeping (`docker image prune -f`).
+
+---
+
+### 2. Production Debugging Case Study: The "Process Exited with Status 56" Failure
+
+During our initial deployment run, the GitHub Actions CD job failed with:
+```text
+Container gramsaarthi-app Started
+🧹 Pruning dangling docker images to save disk space...
+Total reclaimed space: 0B
+⏳ Waiting for Next.js service to initialize...
+🩺 Running local container health check (localhost:3000)...
+2026/09/09 12:52:05 Process exited with status 56
+Error: Process completed with exit code 1.
+```
+
+#### Root Cause Analysis:
+1. **`curl: (56) CURLE_RECV_ERROR`**: Indicates a TCP reset / connection reset by peer.
+2. In Docker, `docker-proxy` opens port 3000 immediately upon container start. However, on a `t3.micro` instance (2 vCPUs, 1 GB RAM), the Next.js Node.js server takes **15 to 20 seconds** to compile runtime routes and initialize Prisma.
+3. The initial deployment script executed a single immediate `curl` after only 10 seconds with `script_stop: true`. The probe arrived while Next.js was mid-boot, dropping the connection and aborting the entire workflow!
+
+#### Operational Resolution:
+We replaced the single brittle `curl` with a resilient **polling retry loop**:
+- Increased initial buffer to **20 seconds**.
+- Configured **8 retry attempts** with **5-second backoffs** (giving Next.js up to ~60 seconds total to become healthy).
+- Added diagnostic container log dumps on failure:
+  ```bash
+  MAX_ATTEMPTS=8
+  ATTEMPT=1
+  PASSED=false
+  while [ $ATTEMPT -le $MAX_ATTEMPTS ]; do
+    if curl -f -s -o /dev/null http://localhost:3000/; then
+      echo "✅ Health check passed on attempt $ATTEMPT!"
+      PASSED=true
+      break
+    fi
+    echo "⏳ Health check attempt $ATTEMPT/$MAX_ATTEMPTS pending, retrying in 5 seconds..."
+    sleep 5
+    ATTEMPT=$((ATTEMPT + 1))
+  done
+  if [ "$PASSED" != "true" ]; then
+    docker compose logs --tail=50
+    exit 1
+  fi
+  ```
+- **Result**: Pushed to `main`, and the deployment passed with `✅ Health check passed on attempt 1!` and verified the live AWS production URL.
 
 ---
 
