@@ -3,8 +3,16 @@ name: GramSaarthi AI CI/CD Pipeline
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'MD_Files/**'
+      - '.gitignore'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**.md'
+      - 'MD_Files/**'
+      - '.gitignore'
   workflow_dispatch:
 
 concurrency:
@@ -96,12 +104,15 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            echo "🐳 Building & restarting production Docker containers..."
-            docker compose down
-            docker compose up -d --build
+            echo "🐳 Building updated Docker image in background (zero user downtime)..."
+            docker compose build
 
-            echo "🧹 Pruning dangling docker images to save disk space..."
+            echo "🔄 Recreating container with new build (~1 second in-place swap)..."
+            docker compose up -d --no-deps app
+
+            echo "🧹 Pruning dangling docker images & expired build cache..."
             docker image prune -f
+            docker builder prune -f --filter "until=72h"
 
             echo "⏳ Waiting for Next.js service to initialize..."
             sleep 20
